@@ -3,13 +3,12 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import re
-import io
 import os
 
 st.set_page_config(page_title="Comparador Luz Pro", layout="wide")
 
-st.title("⚡ Comparador: Consumo Real vs Lectura Contador")
-st.markdown("Extrae el consumo real del periodo (ej. 30,91 kWh) e ignora lecturas (ej. 11.716 kWh).")
+st.title("⚡ Comparador de Tarifas: Diferenciación Horaria")
+st.markdown("Extracción precisa de P1 (Punta), P2 (Llano) y P3 (Valle).")
 
 # --- CARGA DE BASE DE DATOS ---
 ARCHIVO_DB_POR_DEFECTO = "tarifas_companias.xlsx"
@@ -24,7 +23,7 @@ else:
     subida = st.sidebar.file_uploader("Sube el Excel de Tarifas", type=["xlsx"])
     if subida: df_raw = pd.read_excel(subida, header=1)
 
-# --- FUNCIÓN DE EXTRACCIÓN QUIRÚRGICA ---
+# --- FUNCIÓN DE EXTRACCIÓN POR PERIODOS ---
 def extraer_datos(archivo_pdf):
     texto_completo = ""
     with pdfplumber.open(archivo_pdf) as pdf:
@@ -39,25 +38,23 @@ def extraer_datos(archivo_pdf):
     m_pot = re.search(r"(\d+[.,]\d+|\d+)\s*kW(?!h)", texto_completo, re.IGNORECASE)
     potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 3.3
 
-    # B. LÓGICA DE CONSUMO: Captura solo si hay un multiplicador 'x' o 'a' (precio) cerca
-    # Energía XXI usa "kWh a 0,XXXX €/kWh"
-    def buscar_consumo_real(etiquetas, texto):
-        for etiqueta in etiquetas:
-            # Buscamos: ETIQUETA + ESPACIOS + NUMERO + kWh + ESPACIOS + ('x' o 'a')
-            patron = re.compile(etiqueta + r".*?(\d+[.,]\d+|\d+)\s*kWh\s*[xa]", re.IGNORECASE | re.DOTALL)
-            match = patron.search(texto)
+    # B. LÓGICA DE DIFERENCIACIÓN (P1, P2, P3)
+    # Buscamos el número que va justo antes de "kWh x" para evitar lecturas totales
+    def buscar_periodo(patrones, texto):
+        for p in patrones:
+            # Captura el valor decimal antes de 'kWh x' o 'kWh a'
+            match = re.search(p + r".*?(\d+[.,]\d+)\s*kWh\s*[xa]", texto, re.IGNORECASE | re.DOTALL)
             if match:
                 return float(match.group(1).replace(',', '.'))
         return 0.0
 
     consumos = {
-        "Punta": buscar_consumo_real([r"P1", r"punta"], texto_completo),
-        "Llano": buscar_consumo_real([r"P2", r"llano"], texto_completo),
-        "Valle": buscar_consumo_real([r"P3", r"valle"], texto_completo)
+        "Punta": buscar_periodo([r"P1", r"punta"], texto_completo),
+        "Llano": buscar_periodo([r"P2", r"llano"], texto_completo),
+        "Valle": buscar_periodo([r"P3", r"valle"], texto_completo)
     }
 
-    # C. Importe Neto (Potencia + Energía)
-    # Buscamos los importes que aparecen a la derecha de los conceptos principales
+    # C. Importe Neto Real
     m_p = re.search(r"(?:potencia contratada|Facturación por potencia).*?(\d+[.,]\d+)\s*€", texto_completo, re.IGNORECASE)
     m_e = re.search(r"(?:energía consumida|Facturación por energía).*?(\d+[.,]\d+)\s*€", texto_completo, re.IGNORECASE)
     
@@ -74,7 +71,6 @@ def extraer_datos(archivo_pdf):
 pdfs = st.file_uploader("Sube tus facturas PDF", type=["pdf"], accept_multiple_files=True)
 
 if df_raw is not None and pdfs:
-    # Ajuste de columnas según el Excel proporcionado (A-G)
     df_tarifas = df_raw.iloc[:, [0, 1, 2, 3, 4, 5, 6]].copy()
     df_tarifas.columns = ['Compania', 'Pot_P1', 'Pot_P2', 'Ene_Punta', 'Ene_Llano', 'Ene_Valle', 'Precio_Exc']
     df_tarifas = df_tarifas.dropna(subset=['Compania'])
@@ -83,27 +79,30 @@ if df_raw is not None and pdfs:
     for pdf in pdfs:
         try:
             d = extraer_datos(pdf)
-            # Fila Real (Debería dar Neto: 22,94€ en tu factura: 7,98 + 14,96)
+            # Fila de la Factura Actual
             res.append({
                 "Archivo": d['archivo'], "Compañía": "🏠 ACTUAL (NETO PDF)",
-                "Pot": d['potencia'], "Punta": d['consumos']['Punta'], 
-                "Llano": d['consumos']['Llano'], "Valle": d['consumos']['Valle'],
+                "Pot": d['potencia'], 
+                "Punta": d['consumos']['Punta'], 
+                "Llano": d['consumos']['Llano'], 
+                "Valle": d['consumos']['Valle'],
                 "COSTO NETO (€)": d['neto_real']
             })
-            # Simulaciones
+            
+            # Comparativa con otras compañías
             for _, fila in df_tarifas.iterrows():
-                # Cálculo de potencia (término fijo)
                 fijo = d['potencia'] * d['dias'] * (float(str(fila['Pot_P1']).replace(',','.')) + float(str(fila['Pot_P2']).replace(',','.')))
-                # Cálculo de energía (término variable)
                 var = (d['consumos']['Punta'] * float(str(fila['Ene_Punta']).replace(',','.')) + 
                        d['consumos']['Llano'] * float(str(fila['Ene_Llano']).replace(',','.')) + 
                        d['consumos']['Valle'] * float(str(fila['Ene_Valle']).replace(',','.')))
                 res.append({
                     "Archivo": d['archivo'], "Compañía": str(fila['Compania']),
-                    "Pot": d['potencia'], "Punta": d['consumos']['Punta'], 
-                    "Llano": d['consumos']['Llano'], "Valle": d['consumos']['Valle'],
+                    "Pot": d['potencia'], 
+                    "Punta": d['consumos']['Punta'], 
+                    "Llano": d['consumos']['Llano'], 
+                    "Valle": d['consumos']['Valle'],
                     "COSTO NETO (€)": round(fijo + var, 2)
                 })
-        except Exception as e: st.error(f"Error en {pdf.name}: {e}")
+        except Exception as e: st.error(f"Error procesando {pdf.name}: {e}")
 
     st.dataframe(pd.DataFrame(res), use_container_width=True)
