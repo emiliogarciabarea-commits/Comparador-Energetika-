@@ -39,27 +39,27 @@ def extraer_datos(archivo_pdf):
     m_pot = re.search(r"(\d+[.,]\d+|\d+)\s*kW(?!h)", texto_completo, re.IGNORECASE)
     potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 3.3
 
-    # B. LÓGICA DE CONSUMO: Captura solo si hay un multiplicador 'x' cerca
-    # Esto evita capturar la lectura acumulada del contador (ej. 11.716)
+    # B. LÓGICA DE CONSUMO: Captura solo si hay un multiplicador 'x' o 'a' (precio) cerca
+    # Energía XXI usa "kWh a 0,XXXX €/kWh"
     def buscar_consumo_real(etiquetas, texto):
         for etiqueta in etiquetas:
-            # Buscamos: ETIQUETA + ESPACIOS + NUMERO + kWh + ESPACIOS + 'x'
-            patron = re.compile(etiqueta + r".*?(\d+[.,]\d+|\d+)\s*kWh\s*x", re.IGNORECASE | re.DOTALL)
+            # Buscamos: ETIQUETA + ESPACIOS + NUMERO + kWh + ESPACIOS + ('x' o 'a')
+            patron = re.compile(etiqueta + r".*?(\d+[.,]\d+|\d+)\s*kWh\s*[xa]", re.IGNORECASE | re.DOTALL)
             match = patron.search(texto)
             if match:
                 return float(match.group(1).replace(',', '.'))
         return 0.0
 
     consumos = {
-        "Punta": buscar_consumo_real([r"P1", r"Consumo electricidad Punta"], texto_completo),
-        "Llano": buscar_consumo_real([r"P2", r"Consumo electricidad Llano"], texto_completo),
-        "Valle": buscar_consumo_real([r"P3", r"Consumo electricidad Valle"], texto_completo)
+        "Punta": buscar_consumo_real([r"P1", r"punta"], texto_completo),
+        "Llano": buscar_consumo_real([r"P2", r"llano"], texto_completo),
+        "Valle": buscar_consumo_real([r"P3", r"valle"], texto_completo)
     }
 
     # C. Importe Neto (Potencia + Energía)
-    # Energía XXI: 'Por potencia contratada 7,98 €' + 'Por energía consumida 14,96 €'
-    m_p = re.search(r"(?:potencia contratada|Facturación por potencia).*?(\d+[.,]\d+)", texto_completo, re.IGNORECASE)
-    m_e = re.search(r"(?:energía consumida|Facturación por energía).*?(\d+[.,]\d+)", texto_completo, re.IGNORECASE)
+    # Buscamos los importes que aparecen a la derecha de los conceptos principales
+    m_p = re.search(r"(?:potencia contratada|Facturación por potencia).*?(\d+[.,]\d+)\s*€", texto_completo, re.IGNORECASE)
+    m_e = re.search(r"(?:energía consumida|Facturación por energía).*?(\d+[.,]\d+)\s*€", texto_completo, re.IGNORECASE)
     
     val_p = float(m_p.group(1).replace(',', '.')) if m_p else 0.0
     val_e = float(m_e.group(1).replace(',', '.')) if m_e else 0.0
@@ -74,6 +74,7 @@ def extraer_datos(archivo_pdf):
 pdfs = st.file_uploader("Sube tus facturas PDF", type=["pdf"], accept_multiple_files=True)
 
 if df_raw is not None and pdfs:
+    # Ajuste de columnas según el Excel proporcionado (A-G)
     df_tarifas = df_raw.iloc[:, [0, 1, 2, 3, 4, 5, 6]].copy()
     df_tarifas.columns = ['Compania', 'Pot_P1', 'Pot_P2', 'Ene_Punta', 'Ene_Llano', 'Ene_Valle', 'Precio_Exc']
     df_tarifas = df_tarifas.dropna(subset=['Compania'])
@@ -82,7 +83,7 @@ if df_raw is not None and pdfs:
     for pdf in pdfs:
         try:
             d = extraer_datos(pdf)
-            # Fila Real (Debería dar Neto: 22,94€ en tu factura)
+            # Fila Real (Debería dar Neto: 22,94€ en tu factura: 7,98 + 14,96)
             res.append({
                 "Archivo": d['archivo'], "Compañía": "🏠 ACTUAL (NETO PDF)",
                 "Pot": d['potencia'], "Punta": d['consumos']['Punta'], 
@@ -91,16 +92,18 @@ if df_raw is not None and pdfs:
             })
             # Simulaciones
             for _, fila in df_tarifas.iterrows():
-                fijo = d['potencia'] * d['dias'] * (float(fila['Pot_P1']) + float(fila['Pot_P2']))
-                var = (d['consumos']['Punta'] * float(fila['Ene_Punta']) + 
-                       d['consumos']['Llano'] * float(fila['Ene_Llano']) + 
-                       d['consumos']['Valle'] * float(fila['Ene_Valle']))
+                # Cálculo de potencia (término fijo)
+                fijo = d['potencia'] * d['dias'] * (float(str(fila['Pot_P1']).replace(',','.')) + float(str(fila['Pot_P2']).replace(',','.')))
+                # Cálculo de energía (término variable)
+                var = (d['consumos']['Punta'] * float(str(fila['Ene_Punta']).replace(',','.')) + 
+                       d['consumos']['Llano'] * float(str(fila['Ene_Llano']).replace(',','.')) + 
+                       d['consumos']['Valle'] * float(str(fila['Ene_Valle']).replace(',','.')))
                 res.append({
                     "Archivo": d['archivo'], "Compañía": str(fila['Compania']),
                     "Pot": d['potencia'], "Punta": d['consumos']['Punta'], 
                     "Llano": d['consumos']['Llano'], "Valle": d['consumos']['Valle'],
                     "COSTO NETO (€)": round(fijo + var, 2)
                 })
-        except Exception as e: st.error(f"Error: {e}")
+        except Exception as e: st.error(f"Error en {pdf.name}: {e}")
 
     st.dataframe(pd.DataFrame(res), use_container_width=True)
