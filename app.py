@@ -1,54 +1,10 @@
+
 import pdfplumber
 import re
 import pandas as pd
 import streamlit as st
 import io
 import os
-from fpdf import FPDF
-
-# --- NUEVA CLASE PARA GENERAR EL PDF ---
-class PDF(FPDF):
-    def header(self):
-        self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'Informe de Comparativa Energética', 0, 1, 'C')
-        self.ln(10)
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
-
-def generar_pdf(df, mejor_opcion):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=11)
-    
-    # Resumen de Ahorro
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Resumen de Estimación Anual", 0, 1)
-    pdf.set_font("Arial", size=11)
-    
-    ahorro_anual = mejor_opcion['Ahorro'] * 12
-    pdf.multi_cell(0, 10, f"Basado en el análisis, la mejor opción es {mejor_opcion['Compañía/Tarifa']}.\n"
-                         f"Ahorro mensual estimado: {mejor_opcion['Ahorro']:.2f} €\n"
-                         f"ESTIMACIÓN DE AHORRO ANUAL: {ahorro_anual:.2f} €")
-    pdf.ln(10)
-    
-    # Tabla
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(70, 10, "Compañía/Tarifa", 1)
-    pdf.cell(40, 10, "Coste Mes", 1)
-    pdf.cell(40, 10, "Ahorro Mes", 1)
-    pdf.ln()
-    
-    pdf.set_font("Arial", size=10)
-    for i, row in df.head(15).iterrows(): # Top 15 para el PDF
-        pdf.cell(70, 10, str(row['Compañía/Tarifa'])[:30], 1)
-        pdf.cell(40, 10, f"{row['Coste (€)']} €", 1)
-        pdf.cell(40, 10, f"{row['Ahorro']} €", 1)
-        pdf.ln()
-    
-    return pdf.output()
 
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
@@ -91,7 +47,7 @@ def extraer_datos_factura(pdf_path):
     match_excedente = re.search(patron_excedente, texto_completo, re.IGNORECASE)
     excedente = abs(float(match_excedente.group(1).replace(',', '.'))) if match_excedente else 0.0
     
-    # --- Lógica específica de Factura Actual (Fila 0) ---
+    # --- Lógica específica de Factura Actual ---
     total_real = 0.0
     es_xxi = re.search(r'Comercializadora\s+de\s+Referencia\s+Energética\s+por\s+XXI|Energía\s+XXI', texto_completo, re.IGNORECASE)
     
@@ -117,14 +73,14 @@ def extraer_datos_factura(pdf_path):
 
 # --- INTERFAZ STREAMLIT ---
 st.set_page_config(page_title="Comparador Energético", layout="wide")
-st.title("Comparador de Facturas Eléctricas")
+st.title("⚡ Comparador de Facturas Eléctricas Pro")
 
 excel_path = "tarifas_companias.xlsx"
 
 if not os.path.exists(excel_path):
-    st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio de GitHub.")
+    st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio.")
 else:
-    uploaded_files = st.file_uploader("Sube tus facturas PDF (puedes subir varias de distintos meses)", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Sube tus facturas PDF", type="pdf", accept_multiple_files=True)
 
     if uploaded_files:
         datos_facturas = []
@@ -138,24 +94,22 @@ else:
 
         if datos_facturas:
             df_resumen_pdfs = pd.DataFrame(datos_facturas)
-            st.subheader("1. Datos Extraídos de los PDFs")
-            st.write(df_resumen_pdfs[['Archivo', 'Fecha', 'Días', 'Potencia (kW)', 'Consumo Punta (kWh)', 'Consumo Llano (kWh)', 'Consumo Valle (kWh)', 'Excedente (kWh)']])
+            
+            with st.expander("🔍 Ver detalles de datos extraídos"):
+                st.dataframe(df_resumen_pdfs, use_container_width=True)
 
             df_tarifas = pd.read_excel(excel_path)
             resultados_finales = []
 
-            # Cálculos para cada factura subida con cada tarifa del Excel
             for _, fact in df_resumen_pdfs.iterrows():
-                # Primero añadimos la factura actual de ese mes
+                # Fila de control: Factura Actual
                 resultados_finales.append({
                     "Mes/Fecha": fact['Fecha'],
-                    "Compañía/Tarifa": "--- FACTURA ACTUAL ---",
-                    "Factura": fact['Archivo'],
+                    "Compañía/Tarifa": "📍 TU FACTURA ACTUAL",
                     "Coste (€)": fact['Total Real'],
                     "Ahorro": 0.0
                 })
 
-                # Luego calculamos todas las opciones del Excel para ese mes concreto
                 for index, tarifa in df_tarifas.iterrows():
                     try:
                         nombre_cia = tarifa.iloc[0]
@@ -166,42 +120,54 @@ else:
                         f_valle = pd.to_numeric(tarifa.iloc[5], errors='coerce')
                         g_excedente = pd.to_numeric(tarifa.iloc[6], errors='coerce')
 
-                        coste = (fact['Días'] * b_pot1 * fact['Potencia (kW)']) + \
-                                (fact['Días'] * c_pot2 * fact['Potencia (kW)']) + \
-                                (fact['Consumo Punta (kWh)'] * d_punta) + \
-                                (fact['Consumo Llano (kWh)'] * e_llano) + \
-                                (fact['Consumo Valle (kWh)'] * f_valle) - \
-                                (fact['Excedente (kWh)'] * g_excedente)
+                        coste_estimado = (fact['Días'] * b_pot1 * fact['Potencia (kW)']) + \
+                                         (fact['Días'] * c_pot2 * fact['Potencia (kW)']) + \
+                                         (fact['Consumo Punta (kWh)'] * d_punta) + \
+                                         (fact['Consumo Llano (kWh)'] * e_llano) + \
+                                         (fact['Consumo Valle (kWh)'] * f_valle) - \
+                                         (fact['Excedente (kWh)'] * g_excedente)
                         
+                        ahorro = fact['Total Real'] - coste_estimado
+
                         resultados_finales.append({
                             "Mes/Fecha": fact['Fecha'],
                             "Compañía/Tarifa": nombre_cia,
-                            "Factura": fact['Archivo'],
-                            "Coste (€)": round(coste, 2),
-                            "Ahorro": round(fact['Total Real'] - coste, 2)
+                            "Coste (€)": round(coste_estimado, 2),
+                            "Ahorro": round(ahorro, 2)
                         })
                     except: continue
 
-            # Tabla final
-            df_comparativa = pd.DataFrame(resultados_finales).dropna(subset=['Coste (€)'])
+            # --- RENDERIZADO DE TABLA PROFESIONAL ---
+            df_comp = pd.DataFrame(resultados_finales).dropna(subset=['Coste (€)'])
+            df_comp = df_comp.sort_values(by=["Mes/Fecha", "Coste (€)"], ascending=[True, True])
+
+            st.subheader("📊 Comparativa de Mercado")
             
-            # ORDENACIÓN CLAVE: Primero por Fecha, luego por Coste de menor a mayor
-            df_comparativa = df_comparativa.sort_values(by=["Mes/Fecha", "Coste (€)"], ascending=[True, True]).reset_index(drop=True)
+            # Configuración de columnas
+            st.dataframe(
+                df_comp,
+                column_config={
+                    "Mes/Fecha": "📅 Período",
+                    "Compañía/Tarifa": "🏢 Proveedor / Opción",
+                    "Coste (€)": st.column_config.ProgressColumn(
+                        "Coste Mensual",
+                        format="%.2f €",
+                        min_value=0,
+                        max_value=float(df_comp["Coste (€)"].max()),
+                    ),
+                    "Ahorro": st.column_config.NumberColumn(
+                        "Diferencia vs Actual",
+                        format="%.2f €",
+                        help="Valores positivos indican cuánto dinero ahorrarías."
+                    )
+                },
+                hide_index=True,
+                use_container_width=True
+            )
 
-            st.subheader("2. Comparativa Final (Ordenada por Mes y Ahorro)")
-            st.dataframe(df_comparativa, use_container_width=True)
-
-            # --- NUEVA SECCIÓN DE EXPORTACIÓN ---
-            st.divider()
-            # Buscamos la mejor opción (excluyendo la factura actual)
-            opciones_ahorro = df_comparativa[df_comparativa["Compañía/Tarifa"] != "--- FACTURA ACTUAL ---"]
-            if not opciones_ahorro.empty:
-                mejor = opciones_ahorro.iloc[0]
-                pdf_data = generar_pdf(df_comparativa, mejor)
-                
-                st.download_button(
-                    label="📥 Descargar Comparativa en PDF",
-                    data=pdf_data,
-                    file_name="Comparativa_Energia.pdf",
-                    mime="application/pdf"
-                )
+            # Highlight de la mejor opción
+            mejor = df_comp[df_comp["Compañía/Tarifa"] != "📍 TU FACTURA ACTUAL"].iloc[0]
+            if mejor["Ahorro"] > 0:
+                st.success(f"💡 **Oportunidad de Ahorro:** Cambiándote a **{mejor['Compañía/Tarifa']}** podrías ahorrar **{mejor['Ahorro']} €** en este recibo.")
+            else:
+                st.info("✅ Tu tarifa actual parece ser la más competitiva por ahora.")
