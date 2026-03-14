@@ -72,6 +72,7 @@ def extraer_datos_factura(pdf_path):
     }
 
 # --- INTERFAZ STREAMLIT ---
+st.set_page_config(page_title="Comparador Energético", layout="wide")
 st.title("Comparador de Facturas Eléctricas")
 
 excel_path = "tarifas_companias.xlsx"
@@ -79,7 +80,7 @@ excel_path = "tarifas_companias.xlsx"
 if not os.path.exists(excel_path):
     st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio de GitHub.")
 else:
-    uploaded_files = st.file_uploader("Sube tus facturas PDF", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Sube tus facturas PDF (puedes subir varias de distintos meses)", type="pdf", accept_multiple_files=True)
 
     if uploaded_files:
         datos_facturas = []
@@ -93,33 +94,33 @@ else:
 
         if datos_facturas:
             df_resumen_pdfs = pd.DataFrame(datos_facturas)
-            st.subheader("Datos Extraídos de los PDFs")
+            st.subheader("1. Datos Extraídos de los PDFs")
             st.write(df_resumen_pdfs[['Archivo', 'Fecha', 'Días', 'Potencia (kW)', 'Consumo Punta (kWh)', 'Consumo Llano (kWh)', 'Consumo Valle (kWh)', 'Excedente (kWh)']])
 
             df_tarifas = pd.read_excel(excel_path)
             resultados_finales = []
 
-            # Fila 0: Factura Actual (Añadida Fecha)
+            # Cálculos para cada factura subida con cada tarifa del Excel
             for _, fact in df_resumen_pdfs.iterrows():
+                # Primero añadimos la factura actual de ese mes
                 resultados_finales.append({
-                    "Compañía/Tarifa": "--- FACTURA ACTUAL (Referencia) ---",
-                    "Fecha": fact['Fecha'],
+                    "Mes/Fecha": fact['Fecha'],
+                    "Compañía/Tarifa": "--- FACTURA ACTUAL ---",
                     "Factura": fact['Archivo'],
                     "Coste (€)": fact['Total Real']
                 })
 
-            # Cálculos comparativos (Añadida Fecha)
-            for index, tarifa in df_tarifas.iterrows():
-                try:
-                    nombre_cia = tarifa.iloc[0]
-                    b_pot1 = pd.to_numeric(tarifa.iloc[1], errors='coerce')
-                    c_pot2 = pd.to_numeric(tarifa.iloc[2], errors='coerce')
-                    d_punta = pd.to_numeric(tarifa.iloc[3], errors='coerce')
-                    e_llano = pd.to_numeric(tarifa.iloc[4], errors='coerce')
-                    f_valle = pd.to_numeric(tarifa.iloc[5], errors='coerce')
-                    g_excedente = pd.to_numeric(tarifa.iloc[6], errors='coerce')
+                # Luego calculamos todas las opciones del Excel para ese mes concreto
+                for index, tarifa in df_tarifas.iterrows():
+                    try:
+                        nombre_cia = tarifa.iloc[0]
+                        b_pot1 = pd.to_numeric(tarifa.iloc[1], errors='coerce')
+                        c_pot2 = pd.to_numeric(tarifa.iloc[2], errors='coerce')
+                        d_punta = pd.to_numeric(tarifa.iloc[3], errors='coerce')
+                        e_llano = pd.to_numeric(tarifa.iloc[4], errors='coerce')
+                        f_valle = pd.to_numeric(tarifa.iloc[5], errors='coerce')
+                        g_excedente = pd.to_numeric(tarifa.iloc[6], errors='coerce')
 
-                    for _, fact in df_resumen_pdfs.iterrows():
                         coste = (fact['Días'] * b_pot1 * fact['Potencia (kW)']) + \
                                 (fact['Días'] * c_pot2 * fact['Potencia (kW)']) + \
                                 (fact['Consumo Punta (kWh)'] * d_punta) + \
@@ -128,15 +129,18 @@ else:
                                 (fact['Excedente (kWh)'] * g_excedente)
                         
                         resultados_finales.append({
+                            "Mes/Fecha": fact['Fecha'],
                             "Compañía/Tarifa": nombre_cia,
-                            "Fecha": fact['Fecha'],
                             "Factura": fact['Archivo'],
                             "Coste (€)": round(coste, 2)
                         })
-                except: continue
+                    except: continue
 
+            # Tabla final
             df_comparativa = pd.DataFrame(resultados_finales).dropna(subset=['Coste (€)'])
-            df_comparativa = df_comparativa.sort_values(by="Coste (€)", ascending=True).reset_index(drop=True)
+            
+            # ORDENACIÓN CLAVE: Primero por Fecha, luego por Coste de menor a mayor
+            df_comparativa = df_comparativa.sort_values(by=["Mes/Fecha", "Coste (€)"], ascending=[True, True]).reset_index(drop=True)
 
-            st.subheader("Comparativa Final (Ordenada por ahorro)")
-            st.table(df_comparativa)
+            st.subheader("2. Comparativa Final (Ordenada por Mes y Ahorro)")
+            st.dataframe(df_comparativa, use_container_width=True)
