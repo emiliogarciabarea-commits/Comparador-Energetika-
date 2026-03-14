@@ -74,13 +74,11 @@ def extraer_datos_factura(pdf_path):
 # --- INTERFAZ STREAMLIT ---
 st.title("Comparador de Facturas Eléctricas")
 
-# Carga automática del Excel desde el repositorio
 excel_path = "tarifas_companias.xlsx"
 
 if not os.path.exists(excel_path):
-    st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio de GitHub.")
+    st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio.")
 else:
-    # Subida manual de PDFs
     uploaded_files = st.file_uploader("Sube tus facturas PDF", type="pdf", accept_multiple_files=True)
 
     if uploaded_files:
@@ -98,15 +96,14 @@ else:
             st.subheader("Datos Extraídos de los PDFs")
             st.write(df_resumen_pdfs[['Archivo', 'Fecha', 'Días', 'Potencia (kW)', 'Consumo Punta (kWh)', 'Consumo Llano (kWh)', 'Consumo Valle (kWh)', 'Excedente (kWh)']])
 
-            # Leer tarifas desde el Excel precargado
             df_tarifas = pd.read_excel(excel_path)
-            
             resultados_finales = []
 
-            # Fila 0: Factura Actual
+            # Fila de Factura Actual
             for _, fact in df_resumen_pdfs.iterrows():
                 resultados_finales.append({
                     "Compañía/Tarifa": "--- FACTURA ACTUAL (Referencia) ---",
+                    "Fecha": fact['Fecha'],
                     "Factura": fact['Archivo'],
                     "Coste (€)": fact['Total Real']
                 })
@@ -132,14 +129,12 @@ else:
                         
                         resultados_finales.append({
                             "Compañía/Tarifa": nombre_cia,
+                            "Fecha": fact['Fecha'],
                             "Factura": fact['Archivo'],
                             "Coste (€)": round(coste, 2)
                         })
                 except: continue
 
-            # Tabla final ordenada y sin NaNs
             df_comparativa = pd.DataFrame(resultados_finales).dropna(subset=['Coste (€)'])
+            # Ordenar por coste y resetear índice
             df_comparativa = df_comparativa.sort_values(by="Coste (€)", ascending=True).reset_index(drop=True)
-
-            st.subheader("Comparativa Final (Ordenada por ahorro)")
-            st.table(df_comparativa)
