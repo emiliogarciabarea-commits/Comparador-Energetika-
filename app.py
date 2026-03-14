@@ -5,7 +5,6 @@ import pandas as pd
 import streamlit as st
 import io
 import os
-import plotly.express as px
 
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
@@ -81,7 +80,7 @@ excel_path = "tarifas_companias.xlsx"
 if not os.path.exists(excel_path):
     st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio de GitHub.")
 else:
-    uploaded_files = st.file_uploader("Sube tus facturas PDF", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Sube tus facturas PDF (puedes subir varias de distintos meses)", type="pdf", accept_multiple_files=True)
 
     if uploaded_files:
         datos_facturas = []
@@ -101,13 +100,17 @@ else:
             df_tarifas = pd.read_excel(excel_path)
             resultados_finales = []
 
+            # Cálculos para cada factura subida con cada tarifa del Excel
             for _, fact in df_resumen_pdfs.iterrows():
+                # Primero añadimos la factura actual de ese mes
                 resultados_finales.append({
                     "Mes/Fecha": fact['Fecha'],
                     "Compañía/Tarifa": "--- FACTURA ACTUAL ---",
+                    "Factura": fact['Archivo'],
                     "Coste (€)": fact['Total Real']
                 })
 
+                # Luego calculamos todas las opciones del Excel para ese mes concreto
                 for index, tarifa in df_tarifas.iterrows():
                     try:
                         nombre_cia = tarifa.iloc[0]
@@ -128,26 +131,16 @@ else:
                         resultados_finales.append({
                             "Mes/Fecha": fact['Fecha'],
                             "Compañía/Tarifa": nombre_cia,
+                            "Factura": fact['Archivo'],
                             "Coste (€)": round(coste, 2)
                         })
                     except: continue
 
+            # Tabla final
             df_comparativa = pd.DataFrame(resultados_finales).dropna(subset=['Coste (€)'])
+            
+            # ORDENACIÓN CLAVE: Primero por Fecha, luego por Coste de menor a mayor
             df_comparativa = df_comparativa.sort_values(by=["Mes/Fecha", "Coste (€)"], ascending=[True, True]).reset_index(drop=True)
 
-            # --- NUEVA SECCIÓN: GRÁFICA ---
-            st.subheader("2. Análisis Visual de Costes")
-            
-            fig = px.bar(df_comparativa, 
-                         x="Compañía/Tarifa", 
-                         y="Coste (€)", 
-                         color="Mes/Fecha",
-                         barmode="group",
-                         title="Comparativa de precios por tarifa y mes",
-                         text_auto='.2f')
-            
-            st.plotly_chart(fig, use_container_width=True)
-
-            # --- TABLA FINAL ---
-            st.subheader("3. Tabla Detallada")
-            st.table(df_comparativa)
+            st.subheader("2. Comparativa Final (Ordenada por Mes y Ahorro)")
+            st.dataframe(df_comparativa, use_container_width=True)
