@@ -49,31 +49,26 @@ def extraer_datos_factura(pdf_path):
         excedente = 0.0 
 
     elif es_naturgy:
-        # Fecha de emisión [cite: 7]
+        # Fecha de emisión
         m_fecha = re.search(r'Fecha\s+de\s+emisión:\s*([\d/]{10})', texto_completo, re.IGNORECASE)
         fecha = m_fecha.group(1) if m_fecha else "No encontrada"
         
-        # Búsqueda de días en la fila de "Alquiler de contador" 
+        # Extracción de días buscando por líneas (como en TotalEnergies)
         dias = 0
         lineas = texto_completo.split('\n')
         for linea in lineas:
-            if "Alquiler de contador" in linea:
-                # Buscamos el número seguido de "días" en esa línea específica
-                m_dias_fila = re.search(r'(\d+)\s*días', linea, re.IGNORECASE)
-                if m_dias_fila:
-                    dias = int(m_dias_fila.group(1))
-                    break
-        
-        # Si no se encuentra en el alquiler, intentamos en el periodo general como fallback [cite: 88]
-        if dias == 0:
-            m_dias_gen = re.search(r'(\d+)\s*días', texto_completo)
-            dias = int(m_dias_gen.group(1)) if m_dias_gen else 0
+            # Buscamos en las líneas de Potencia o Alquiler de contador
+            if "Término potencia" in linea or "Alquiler de contador" in linea:
+                m_dias_linea = re.search(r'(\d+)\s*días', linea, re.IGNORECASE)
+                if m_dias_linea:
+                    dias = int(m_dias_linea.group(1))
+                    break # Una vez encontrado, dejamos de buscar
 
-        # Potencia [cite: 108]
+        # Potencia
         m_pot = re.search(r'Potencia\s+contratada\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
 
-        # Consumos [cite: 83, 91]
+        # Consumos
         m_punta = re.search(r'Consumo\s+electricidad\s+Punta\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         m_llano = re.search(r'Consumo\s+electricidad\s+Llano\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         m_valle = re.search(r'Consumo\s+electricidad\s+Valle\s*([\d,.]+)', texto_completo, re.IGNORECASE)
@@ -84,13 +79,11 @@ def extraer_datos_factura(pdf_path):
             'valle': float(m_valle.group(1).replace(',', '.')) if m_valle else 0.0
         }
 
-        # Excedentes 
-        m_exc = re.findall(r'Compensación\s+Excedentes.*?(-?[\d,.]+)\s*€', texto_completo, re.DOTALL | re.IGNORECASE)
-        # Para Naturgy buscamos los kWh en la tabla de detalle
+        # Excedentes
         m_exc_kwh = re.findall(r'(-?\d+)\s*kWh.*?Valoración\s+excedentes', texto_completo, re.DOTALL | re.IGNORECASE)
         excedente = abs(float(m_exc_kwh[0])) if m_exc_kwh else 0.0
 
-        # Total Real [cite: 15, 83]
+        # Total Real
         m_total = re.search(r'Total\s+a\s+pagar\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         total_real = float(m_total.group(1).replace(',', '.')) if m_total else 0.0
 
