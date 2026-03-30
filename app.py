@@ -150,15 +150,12 @@ def extraer_datos_factura(pdf_path):
         match_fecha = re.search(patron_fecha, texto_completo, re.IGNORECASE)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
         
-        # --- CORRECCIÓN ESPECÍFICA PARA NATURGY ---
+        # --- CORRECCIÓN DEFINITIVA PARA NATURGY ---
         if es_naturgy:
-            # Buscamos los días específicamente en la línea del contador o potencia facturada
-            # El patrón busca un número de días antes de la palabra "días" pero cerca de conceptos de facturación
-            match_dias_nat = re.search(r'(?:Alquiler\s+de\s+contador|Facturación\s+por\s+potencia).*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
+            # Buscamos los días exclusivamente en la tabla de detalles, evitando el texto legal de "30 días"
+            match_dias_nat = re.search(r'Alquiler\s+de\s+contador.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
             if not match_dias_nat:
-                # Si no lo encuentra, buscamos el primer "X días" que no sea el de las reclamaciones (30)
-                # O simplemente buscamos el periodo de fechas y calculamos, pero este patrón suele bastar:
-                match_dias_nat = re.search(r'Término\s+potencia.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
+                match_dias_nat = re.search(r'Financiación\s+Bono\s+Social.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
             
             dias = int(match_dias_nat.group(1)) if match_dias_nat else 0
         else:
@@ -183,6 +180,7 @@ def extraer_datos_factura(pdf_path):
         "Total Real": round(total_real, 2)
     }
 
+# ... EL RESTO DEL CÓDIGO PERMANECE IGUAL ...
 st.set_page_config(page_title="Comparador Energético", layout="wide")
 st.title("⚡ Comparador de Facturas Eléctricas Pro")
 
