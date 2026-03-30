@@ -174,24 +174,25 @@ def extraer_datos_factura(pdf_path):
                     consumos[tramo] = float(match.group(1).replace(',', '.'))
                     break
         
+        # Búsqueda de potencia
         patron_potencia = r'(?:Potencia\s+contratada(?:\s+en\s+punta-llano|\s+P1)?):\s*([\d,.]+)\s*kW'
         match_potencia = re.search(patron_potencia, texto_completo, re.IGNORECASE)
         potencia = float(match_potencia.group(1).replace(',', '.')) if match_potencia else 0.0
         
+        # Búsqueda de fecha
         patron_fecha = r'(?:emitida\s+el|Fecha\s+de\s+emisión:)\s*([\d/]+\s*(?:de\s+\w+\s+de\s+)?\d{2,4})'
         match_fecha = re.search(patron_fecha, texto_completo, re.IGNORECASE)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
 
-        # --- MEJORA: Búsqueda de días tras "Término de potencia" ---
-        patron_dias = r'Término\s+potencia.*?(\d+)\s*días'
-        match_dias = re.search(patron_dias, texto_completo, re.IGNORECASE | re.DOTALL)
-        if match_dias:
-            dias = int(match_dias.group(1))
+        # --- MEJORA: BÚSQUEDA DE DÍAS ESPECÍFICA DETRÁS DE TÉRMINO POTENCIA ---
+        # Busca: Término potencia ... x 20 días
+        match_dias_especifico = re.search(r'Término\s+potencia.*?x\s*(\d+)\s*días', texto_completo, re.IGNORECASE | re.DOTALL)
+        if match_dias_especifico:
+            dias = int(match_dias_especifico.group(1))
         else:
-            # Fallback a búsqueda genérica si no encuentra el anterior
-            match_dias_gen = re.search(r'(\d+)\s*días', texto_completo)
-            dias = int(match_dias_gen.group(1)) if match_dias_gen else 0
-
+            match_dias = re.search(r'(\d+)\s*días', texto_completo)
+            dias = int(match_dias.group(1)) if match_dias else 0
+        
         match_excedente = re.search(r'Valoración\s+excedentes\s*(?:-?\d+[\d,.]*\s*€/kWh)?\s*(-?\d+[\d,.]*)\s*kWh', texto_completo, re.IGNORECASE)
         excedente = abs(float(match_excedente.group(1).replace(',', '.'))) if match_excedente else 0.0
         
