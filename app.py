@@ -8,12 +8,12 @@ import os
 
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
-    texto_paginas = []
+    paginas_texto = []
     with pdfplumber.open(pdf_path) as pdf:
         for pagina in pdf.pages:
-            content = pagina.extract_text() or ""
-            texto_paginas.append(content)
-            texto_completo += content + "\n"
+            contenido = pagina.extract_text() + "\n"
+            texto_completo += contenido
+            paginas_texto.append(contenido)
 
     # --- DETECCIÓN DE TIPO DE FACTURA ---
     es_el_corte_ingles = re.search(r'Energía\s+El\s+Corte\s+Inglés|TELECOR', texto_completo, re.IGNORECASE)
@@ -52,23 +52,36 @@ def extraer_datos_factura(pdf_path):
         m_fecha = re.search(r'Fecha\s+de\s+emisión:\s*([\d/]{10})', texto_completo, re.IGNORECASE)
         fecha = m_fecha.group(1) if m_fecha else "No encontrada"
         
-        # EXTRACCIÓN DE DÍAS: Primero buscamos en la Página 2 (donde está el desglose)
+        # BÚSQUEDA ESPECÍFICA EN PÁGINA 2 (Bloque Detalle)
         dias = 0
-        if len(texto_paginas) >= 2:
-            pag2 = texto_paginas[1]
-            # Buscamos en líneas de potencia o alquiler en pag 2
-            lineas_pag2 = pag2.split('\n')
-            for linea in lineas_pag2:
-                if any(x in linea for x in ["potencia", "Alquiler", "días"]):
+        if len(paginas_texto) >= 2:
+            texto_p2 = paginas_texto[1]
+            # Intentamos aislar el bloque "3. Detalle"
+            bloque_detalle = ""
+            inicio = re.search(r'3\.\s*Detalle', texto_p2, re.IGNORECASE)
+            if inicio:
+                fin = re.search(r'4\.\s*Información', texto_p2, re.IGNORECASE)
+                bloque_detalle = texto_p2[inicio.start():fin.start()] if fin else texto_p2[inicio.start():]
+            
+            # Si encontramos el bloque, buscamos los días ahí
+            lineas_detalle = bloque_detalle.split('\n') if bloque_detalle else texto_p2.split('\n')
+            for linea in lineas_detalle:
+                if any(x in linea for x in ["días", "dia(s)"]):
                     m_dias = re.search(r'(\d+)\s*días', linea, re.IGNORECASE)
                     if m_dias:
                         dias = int(m_dias.group(1))
-                        break
+                        if dias > 0: break
         
-        # Si sigue siendo 0, buscamos en todo el documento
+        # Fallback si no se encontró en P2
         if dias == 0:
-            m_dias_gen = re.search(r'(\d+)\s*días', texto_completo, re.IGNORECASE)
-            dias = int(m_dias_gen.group(1)) if m_dias_gen else 0
+            m_periodo = re.search(r'del\s+([\d/]+)\s+al\s+([\d/]+)', texto_completo, re.IGNORECASE)
+            if m_periodo:
+                from datetime import datetime
+                try:
+                    d1 = datetime.strptime(m_periodo.group(1), '%d/%m/%Y')
+                    d2 = datetime.strptime(m_periodo.group(2), '%d/%m/%Y')
+                    dias = (d2 - d1).days + 1
+                except: pass
 
         # Potencia
         m_pot = re.search(r'Potencia\s+contratada\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
@@ -134,6 +147,19 @@ def extraer_datos_factura(pdf_path):
         consumos = {'punta': 0.0, 'llano': 0.0, 'valle': 0.0}
         excedente = 0.0
 
+    elif es_repsol:
+        m_fecha = re.search(r'Fecha\s+de\s+emisión\s*([\d/]+)', texto_completo, re.IGNORECASE)
+        fecha = m_fecha.group(1) if m_fecha else "No encontrada"
+        m_pot = re.search(r'Potencia\s+contratada\s*([\d,.]+)\s*kW', texto_completo, re.IGNORECASE)
+        potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
+        m_dias = re.search(r'Días\s+facturados\s*(\d+)', texto_completo, re.IGNORECASE)
+        dias = int(m_dias.group(1)) if m_dias else 0
+        m_fijo = re.search(r'Término\s+fijo\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+        m_ener = re.search(r'Energía\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+        total_real = (float(m_fijo.group(1).replace(',', '.')) if m_fijo else 0.0) + (float(m_ener.group(1).replace(',', '.')) if m_ener else 0.0)
+        consumos = {'punta': 0.0, 'llano': 0.0, 'valle': 0.0}
+        excedente = 0.0
+
     elif es_iberdrola:
         patron_potencia = r'Potencia\s+punta:\s*([\d,.]+)\s*kW'
         match_potencia = re.search(patron_potencia, texto_completo, re.IGNORECASE)
@@ -147,7 +173,7 @@ def extraer_datos_factura(pdf_path):
         excedente = 0.0
 
     else:
-        # Lógica genérica
+        # Lógica genérica y Energía XXI
         patron_potencia = r'(?:Potencia\s+contratada(?:\s+en\s+punta-llano|\s+P1)?):\s*([\d,.]+)\s*kW'
         match_potencia = re.search(patron_potencia, texto_completo, re.IGNORECASE)
         potencia = float(match_potencia.group(1).replace(',', '.')) if match_potencia else 0.0
