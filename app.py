@@ -52,57 +52,48 @@ def extraer_datos_factura(pdf_path):
         m_fecha = re.search(r'Fecha\s+de\s+emisión:\s*([\d/]{10})', texto_completo, re.IGNORECASE)
         fecha = m_fecha.group(1) if m_fecha else "No encontrada"
         
-        # BÚSQUEDA ESPECÍFICA EN PÁGINA 2 (Bloque Detalle)
+        # REFINAMIENTO DE DÍAS: Búsqueda quirúrgica en Bloque 3 de Página 2
         dias = 0
         if len(paginas_texto) >= 2:
             texto_p2 = paginas_texto[1]
-            # Intentamos aislar el bloque "3. Detalle"
-            bloque_detalle = ""
-            inicio = re.search(r'3\.\s*Detalle', texto_p2, re.IGNORECASE)
-            if inicio:
-                fin = re.search(r'4\.\s*Información', texto_p2, re.IGNORECASE)
-                bloque_detalle = texto_p2[inicio.start():fin.start()] if fin else texto_p2[inicio.start():]
-            
-            # Si encontramos el bloque, buscamos los días ahí
-            lineas_detalle = bloque_detalle.split('\n') if bloque_detalle else texto_p2.split('\n')
-            for linea in lineas_detalle:
-                if any(x in linea for x in ["días", "dia(s)"]):
-                    m_dias = re.search(r'(\d+)\s*días', linea, re.IGNORECASE)
-                    if m_dias:
-                        dias = int(m_dias.group(1))
-                        if dias > 0: break
-        
-        # Fallback si no se encontró en P2
+            # Extraer solo la sección de detalle para evitar ruido
+            inicio_bloque = re.search(r'3\.\s*Detalle', texto_p2, re.IGNORECASE)
+            if inicio_bloque:
+                seccion_detalle = texto_p2[inicio_bloque.start():]
+                # Buscar la línea del término de potencia o energía que siempre lleva los días
+                lineas = seccion_detalle.split('\n')
+                for linea in lineas:
+                    if "días" in linea.lower():
+                        # Captura el número que va antes de la palabra "días"
+                        m_d = re.search(r'(\d+)\s*días', linea, re.IGNORECASE)
+                        if m_d:
+                            dias = int(m_d.group(1))
+                            break
+
+        # Si el método quirúrgico falla, usamos el cálculo por fechas del periodo
         if dias == 0:
-            m_periodo = re.search(r'del\s+([\d/]+)\s+al\s+([\d/]+)', texto_completo, re.IGNORECASE)
-            if m_periodo:
+            m_per = re.search(r'del\s+([\d/]{10})\s+al\s+([\d/]{10})', texto_completo, re.IGNORECASE)
+            if m_per:
                 from datetime import datetime
                 try:
-                    d1 = datetime.strptime(m_periodo.group(1), '%d/%m/%Y')
-                    d2 = datetime.strptime(m_periodo.group(2), '%d/%m/%Y')
+                    d1 = datetime.strptime(m_per.group(1), '%d/%m/%Y')
+                    d2 = datetime.strptime(m_per.group(2), '%d/%m/%Y')
                     dias = (d2 - d1).days + 1
                 except: pass
 
-        # Potencia
+        # Potencia y Consumos (se mantiene igual)
         m_pot = re.search(r'Potencia\s+contratada\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
-
-        # Consumos
         m_punta = re.search(r'Consumo\s+electricidad\s+Punta\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         m_llano = re.search(r'Consumo\s+electricidad\s+Llano\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         m_valle = re.search(r'Consumo\s+electricidad\s+Valle\s*([\d,.]+)', texto_completo, re.IGNORECASE)
-        
         consumos = {
             'punta': float(m_punta.group(1).replace(',', '.')) if m_punta else 0.0,
             'llano': float(m_llano.group(1).replace(',', '.')) if m_llano else 0.0,
             'valle': float(m_valle.group(1).replace(',', '.')) if m_valle else 0.0
         }
-
-        # Excedentes
         m_exc_kwh = re.findall(r'(-?\d+)\s*kWh.*?Valoración\s+excedentes', texto_completo, re.DOTALL | re.IGNORECASE)
         excedente = abs(float(m_exc_kwh[0])) if m_exc_kwh else 0.0
-
-        # Total Real
         m_total = re.search(r'Total\s+a\s+pagar\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         total_real = float(m_total.group(1).replace(',', '.')) if m_total else 0.0
 
@@ -113,22 +104,18 @@ def extraer_datos_factura(pdf_path):
         dias = int(m_dias_meta.group(1)) if m_dias_meta else 0
         m_pot_meta = re.search(r'Potencia\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         potencia = float(m_pot_meta.group(1).replace(',', '.')) if m_pot_meta else 0.0
-
         total_real = 0.0
         lineas = texto_completo.split('\n')
         for linea in lineas:
             linea_limpia = linea.strip()
             if re.search(r'^(\d{2}\.\d{2}\.\d{4})|(\d+\s+día\(s\))', linea_limpia):
                 m_valor = re.findall(r'([\d,.]+)\s*€\s*$', linea_limpia)
-                if m_valor:
-                    total_real += float(m_valor[-1].replace('.', '').replace(',', '.'))
-
+                if m_valor: total_real += float(m_valor[-1].replace('.', '').replace(',', '.'))
         def extraer_kwh(tipo, texto):
             patron = rf'{tipo}.*?([\d,.]+)\s*kWh'
             matches = re.findall(patron, texto, re.IGNORECASE)
             if matches: return float(matches[-1].replace('.', '').replace(',', '.'))
             return 0.0
-
         consumos = {
             'punta': extraer_kwh('Punta', texto_completo),
             'llano': extraer_kwh('Llano', texto_completo),
@@ -143,7 +130,7 @@ def extraer_datos_factura(pdf_path):
         dias = int(m_dias.group(1)) if m_dias else 0
         m_pot = re.search(r'punta-llano\s*([\d,.]+)\s*kW', texto_completo, re.IGNORECASE)
         potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
-        total_real = 0.0 
+        total_real = 0.0
         consumos = {'punta': 0.0, 'llano': 0.0, 'valle': 0.0}
         excedente = 0.0
 
@@ -173,7 +160,6 @@ def extraer_datos_factura(pdf_path):
         excedente = 0.0
 
     else:
-        # Lógica genérica y Energía XXI
         patron_potencia = r'(?:Potencia\s+contratada(?:\s+en\s+punta-llano|\s+P1)?):\s*([\d,.]+)\s*kW'
         match_potencia = re.search(patron_potencia, texto_completo, re.IGNORECASE)
         potencia = float(match_potencia.group(1).replace(',', '.')) if match_potencia else 0.0
