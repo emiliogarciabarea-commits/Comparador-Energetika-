@@ -8,10 +8,8 @@ import os
 
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
-    # Limitamos la lectura a las dos primeras páginas
     with pdfplumber.open(pdf_path) as pdf:
-        paginas_a_leer = pdf.pages[:2] 
-        for pagina in paginas_a_leer:
+        for pagina in pdf.pages:
             texto_completo += pagina.extract_text() + "\n"
 
     # --- DETECCIÓN DE TIPO DE FACTURA ---
@@ -175,20 +173,24 @@ def extraer_datos_factura(pdf_path):
                 if match:
                     consumos[tramo] = float(match.group(1).replace(',', '.'))
                     break
+        
         patron_potencia = r'(?:Potencia\s+contratada(?:\s+en\s+punta-llano|\s+P1)?):\s*([\d,.]+)\s*kW'
         match_potencia = re.search(patron_potencia, texto_completo, re.IGNORECASE)
         potencia = float(match_potencia.group(1).replace(',', '.')) if match_potencia else 0.0
+        
         patron_fecha = r'(?:emitida\s+el|Fecha\s+de\s+emisión:)\s*([\d/]+\s*(?:de\s+\w+\s+de\s+)?\d{2,4})'
         match_fecha = re.search(patron_fecha, texto_completo, re.IGNORECASE)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
 
-        # --- BUSQUEDA EXACTA DE DÍAS SEGÚN TU TEXTO ---
-        match_dias_alquiler = re.search(r'Alquiler\s+de\s+contador\s+(\d+)\s+días', texto_completo, re.IGNORECASE)
-        if match_dias_alquiler:
-            dias = int(match_dias_alquiler.group(1))
+        # --- MEJORA: Búsqueda de días tras "Término de potencia" ---
+        patron_dias = r'Término\s+potencia.*?(\d+)\s*días'
+        match_dias = re.search(patron_dias, texto_completo, re.IGNORECASE | re.DOTALL)
+        if match_dias:
+            dias = int(match_dias.group(1))
         else:
-            match_dias = re.search(r'(\d+)\s*días', texto_completo)
-            dias = int(match_dias.group(1)) if match_dias else 0
+            # Fallback a búsqueda genérica si no encuentra el anterior
+            match_dias_gen = re.search(r'(\d+)\s*días', texto_completo)
+            dias = int(match_dias_gen.group(1)) if match_dias_gen else 0
 
         match_excedente = re.search(r'Valoración\s+excedentes\s*(?:-?\d+[\d,.]*\s*€/kWh)?\s*(-?\d+[\d,.]*)\s*kWh', texto_completo, re.IGNORECASE)
         excedente = abs(float(match_excedente.group(1).replace(',', '.'))) if match_excedente else 0.0
@@ -208,7 +210,6 @@ def extraer_datos_factura(pdf_path):
         "Total Real": round(total_real, 2)
     }
 
-# El código de Streamlit inferior se mantiene exactamente igual
 st.set_page_config(page_title="Comparador Energético", layout="wide")
 st.title("⚡ Comparador de Facturas Eléctricas Pro")
 
