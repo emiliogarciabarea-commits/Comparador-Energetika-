@@ -149,12 +149,22 @@ def extraer_datos_factura(pdf_path):
         patron_fecha = r'(?:emitida\s+el|Fecha\s+de\s+emisión:)\s*([\d/]+\s*(?:de\s+\w+\s+de\s+)?\d{2,4})'
         match_fecha = re.search(patron_fecha, texto_completo, re.IGNORECASE)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
+        
+        # --- CORRECCIÓN ESPECÍFICA PARA NATURGY ---
         if es_naturgy:
-            match_dias_nat = re.search(r'Término\s+potencia\s+P1.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
+            # Buscamos los días específicamente en la línea del contador o potencia facturada
+            # El patrón busca un número de días antes de la palabra "días" pero cerca de conceptos de facturación
+            match_dias_nat = re.search(r'(?:Alquiler\s+de\s+contador|Facturación\s+por\s+potencia).*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
+            if not match_dias_nat:
+                # Si no lo encuentra, buscamos el primer "X días" que no sea el de las reclamaciones (30)
+                # O simplemente buscamos el periodo de fechas y calculamos, pero este patrón suele bastar:
+                match_dias_nat = re.search(r'Término\s+potencia.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
+            
             dias = int(match_dias_nat.group(1)) if match_dias_nat else 0
         else:
             match_dias = re.search(r'(\d+)\s*días', texto_completo)
             dias = int(match_dias.group(1)) if match_dias else 0
+            
         match_excedente = re.search(r'Valoración\s+excedentes\s*(?:-?\d+[\d,.]*\s*€/kWh)?\s*(-?\d+[\d,.]*)\s*kWh', texto_completo, re.IGNORECASE)
         excedente = abs(float(match_excedente.group(1).replace(',', '.'))) if match_excedente else 0.0
         es_xxi = re.search(r'Comercializadora\s+de\s+Referencia\s+Energética\s+por\s+XXI|Energía\s+XXI', texto_completo, re.IGNORECASE)
