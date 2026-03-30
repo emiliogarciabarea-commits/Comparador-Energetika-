@@ -8,9 +8,13 @@ import os
 
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
+    texto_pagina_2 = ""
     with pdfplumber.open(pdf_path) as pdf:
-        for pagina in pdf.pages:
-            texto_completo += pagina.extract_text() + "\n"
+        for i, pagina in enumerate(pdf.pages):
+            contenido = pagina.extract_text() + "\n"
+            texto_completo += contenido
+            if i == 1:  # Guardamos la segunda página (índice 1)
+                texto_pagina_2 = contenido
 
     # --- DETECCIÓN DE TIPO DE FACTURA ---
     es_el_corte_ingles = re.search(r'Energía\s+El\s+Corte\s+Inglés|TELECOR', texto_completo, re.IGNORECASE)
@@ -150,13 +154,9 @@ def extraer_datos_factura(pdf_path):
         match_fecha = re.search(patron_fecha, texto_completo, re.IGNORECASE)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
         
-        # --- CORRECCIÓN DEFINITIVA PARA NATURGY ---
-        if es_naturgy:
-            # Buscamos los días exclusivamente en la tabla de detalles, evitando el texto legal de "30 días"
-            match_dias_nat = re.search(r'Alquiler\s+de\s+contador.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
-            if not match_dias_nat:
-                match_dias_nat = re.search(r'Financiación\s+Bono\s+Social.*?(\d+)\s+días', texto_completo, re.IGNORECASE | re.DOTALL)
-            
+        if es_naturgy and texto_pagina_2:
+            # Buscamos los días exclusivamente en el texto extraído de la segunda página
+            match_dias_nat = re.search(r'(\d+)\s+días', texto_pagina_2)
             dias = int(match_dias_nat.group(1)) if match_dias_nat else 0
         else:
             match_dias = re.search(r'(\d+)\s*días', texto_completo)
@@ -180,7 +180,6 @@ def extraer_datos_factura(pdf_path):
         "Total Real": round(total_real, 2)
     }
 
-# ... EL RESTO DEL CÓDIGO PERMANECE IGUAL ...
 st.set_page_config(page_title="Comparador Energético", layout="wide")
 st.title("⚡ Comparador de Facturas Eléctricas Pro")
 
