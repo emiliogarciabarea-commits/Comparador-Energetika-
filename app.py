@@ -21,7 +21,39 @@ def extraer_datos_factura(pdf_path):
     es_total_energies = re.search(r'TotalEnergies', texto_completo, re.IGNORECASE)
     es_xxi = re.search(r'Energía\s+XXI', texto_completo, re.IGNORECASE)
 
-    if es_el_corte_ingles:
+    # --- LÓGICA DE EXTRACCIÓN POR COMPAÑÍA ---
+    if es_naturgy:
+        # Extraer días desde "Alquiler de contador"
+        # Busca: "Alquiler de contador" -> espacios -> número -> espacios -> "días"
+        m_dias = re.search(r'Alquiler\s+de\s+contador\s+(\d+)\s+días', texto_completo, re.IGNORECASE)
+        dias = int(m_dias.group(1)) if m_dias else 0
+
+        # Extraer Fecha (Naturgy suele poner Fecha de factura: DD/MM/AAAA)
+        m_fecha = re.search(r'Fecha\s+de\s+factura:\s*([\d/]+)', texto_completo, re.IGNORECASE)
+        fecha = m_fecha.group(1) if m_fecha else "No encontrada"
+
+        # Extraer Potencia
+        m_pot = re.search(r'Potencia\s+contratada.*?([\d,.]+)\s*kW', texto_completo, re.IGNORECASE)
+        potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
+
+        # Extraer Consumos (Punta, Llano, Valle)
+        def extraer_kwh_nat(tipo):
+            patron = rf'Consumo\s+{tipo}.*?([\d,.]+)\s*kWh'
+            match = re.search(patron, texto_completo, re.IGNORECASE)
+            return float(match.group(1).replace(',', '.')) if match else 0.0
+
+        consumos = {
+            'punta': extraer_kwh_nat('Punta'),
+            'llano': extraer_kwh_nat('Llano'),
+            'valle': extraer_kwh_nat('Valle')
+        }
+
+        # Importe Total
+        m_total = re.search(r'Total\s+importe\s+factura\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+        total_real = float(m_total.group(1).replace(',', '.')) if m_total else 0.0
+        excedente = 0.0
+
+    elif es_el_corte_ingles:
         patron_cons_eci = r'Punta\s+Llano\s+Valle\s+Consumo\s+kWh\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)'
         match_cons = re.search(patron_cons_eci, texto_completo)
         
@@ -30,59 +62,19 @@ def extraer_datos_factura(pdf_path):
             'llano': float(match_cons.group(2).replace(',', '.')) if match_cons else 0.0,
             'valle': float(match_cons.group(3).replace(',', '.')) if match_cons else 0.0
         }
-
         patron_potencia = r'Potencia\s+contratada\s+kW\s+([\d,.]+)'
         match_potencia = re.search(patron_potencia, texto_completo)
         potencia = float(match_potencia.group(1).replace(',', '.')) if match_potencia else 0.0
-
         patron_fecha = r'Fecha\s+de\s+Factura:\s*([\d/]+)'
         match_fecha = re.search(patron_fecha, texto_completo)
         fecha = match_fecha.group(1) if match_fecha else "No encontrada"
-
         patron_dias = r'Días\s+de\s+consumo:\s*(\d+)'
         match_dias = re.search(patron_dias, texto_completo)
         dias = int(match_dias.group(1)) if match_dias else 0
-
         patron_total = r'TOTAL\s+FACTURA\s+([\d,.]+)\s*€'
         match_total = re.search(patron_total, texto_completo)
         total_real = float(match_total.group(1).replace(',', '.')) if match_total else 0.0
         excedente = 0.0 
-
-    elif es_naturgy:
-        # Extracción de fecha (similar a Repsol/Iberdrola)
-        m_fecha = re.search(r'Fecha\s+de\s+factura:\s*([\d/]{10})', texto_completo, re.IGNORECASE)
-        fecha = m_fecha.group(1) if m_fecha else "No encontrada"
-        
-        # Extracción de Días (usando lógica de "número de días" o "periodo")
-        m_dias = re.search(r'Número\s+de\s+días:\s*(\d+)', texto_completo, re.IGNORECASE)
-        if not m_dias:
-            m_dias = re.search(r'(\d+)\s*días', texto_completo, re.IGNORECASE)
-        dias = int(m_dias.group(1)) if m_dias else 0
-
-        # Potencia
-        m_pot = re.search(r'Potencia\s+contratada.*?([\d,.]+)\s*kW', texto_completo, re.IGNORECASE | re.DOTALL)
-        potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
-
-        # Consumos
-        m_punta = re.search(r'Término\s+de\s+energía\s+Punta.*?([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE | re.DOTALL)
-        m_llano = re.search(r'Término\s+de\s+energía\s+Llano.*?([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE | re.DOTALL)
-        m_valle = re.search(r'Término\s+de\s+energía\s+Valle.*?([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE | re.DOTALL)
-        
-        consumos = {
-            'punta': float(m_punta.group(1).replace(',', '.')) if m_punta else 0.0,
-            'llano': float(m_llano.group(1).replace(',', '.')) if m_llano else 0.0,
-            'valle': float(m_valle.group(1).replace(',', '.')) if m_valle else 0.0
-        }
-        
-        # Si no encuentra por tramos, busca el total
-        if sum(consumos.values()) == 0:
-            m_total_cons = re.search(r'Consumo\s+eléctrico.*?([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
-            if m_total_cons: consumos['punta'] = float(m_total_cons.group(1).replace(',', '.'))
-
-        # Total Factura
-        m_total = re.search(r'Total\s+importe\s+factura.*?([\d,.]+)\s*€', texto_completo, re.IGNORECASE | re.DOTALL)
-        total_real = float(m_total.group(1).replace(',', '.')) if m_total else 0.0
-        excedente = 0.0
 
     elif es_total_energies:
         m_fecha = re.search(r'Fecha\s+emisión:\s*([\d.]{10})', texto_completo, re.IGNORECASE)
@@ -91,7 +83,6 @@ def extraer_datos_factura(pdf_path):
         dias = int(m_dias_meta.group(1)) if m_dias_meta else 0
         m_pot_meta = re.search(r'Potencia\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         potencia = float(m_pot_meta.group(1).replace(',', '.')) if m_pot_meta else 0.0
-
         total_real = 0.0
         lineas = texto_completo.split('\n')
         for linea in lineas:
@@ -119,24 +110,17 @@ def extraer_datos_factura(pdf_path):
 
     elif es_endesa_luz:
         m_fecha_etiqueta = re.search(r'Fecha\s+emisión\s+factura:\s*([\d/]{10})', texto_completo, re.IGNORECASE)
-        if m_fecha_etiqueta:
-            fecha = m_fecha_etiqueta.group(1)
-        else:
-            m_fecha_generica = re.search(r'(\d{2}/\d{2}/\d{4})', texto_completo)
-            fecha = m_fecha_generica.group(1) if m_fecha_generica else "No encontrada"
-
+        fecha = m_fecha_etiqueta.group(1) if m_fecha_etiqueta else "No encontrada"
         m_dias = re.search(r'(\d+)\s+días', texto_completo, re.IGNORECASE)
         dias = int(m_dias.group(1)) if m_dias else 0
-
         m_pot = re.search(r'punta-llano\s*([\d,.]+)\s*kW', texto_completo, re.IGNORECASE)
         potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
-
+        
         def limpiar_valor_endesa(patron, texto):
             match = re.search(patron, texto, re.IGNORECASE)
             if match:
                 valor_sucio = match.group(1)
-                valor_limpio = valor_sucio.replace(" ", "").replace(".", "")
-                valor_limpio = valor_limpio.replace(",", ".")
+                valor_limpio = valor_sucio.replace(" ", "").replace(".", "").replace(",", ".")
                 try: return float(valor_limpio)
                 except: return 0.0
             return 0.0
@@ -144,11 +128,9 @@ def extraer_datos_factura(pdf_path):
         val_potencia = limpiar_valor_endesa(r'Potencia\s+\.+\s*([\d\s.,]+)€', texto_completo)
         val_energia = limpiar_valor_endesa(r'Energía\s+\.+\s*([\d\s.,]+)€', texto_completo)
         total_real = val_potencia + val_energia
-
         m_punta = re.search(r'Punta\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+[\w,.]+\s+([\d,.]+)', texto_completo, re.IGNORECASE)
         m_llano = re.search(r'Llano\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+[\w,.]+\s+([\d,.]+)', texto_completo, re.IGNORECASE)
         m_valle = re.search(r'Valle\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+[\w,.]+\s+([\d,.]+)', texto_completo, re.IGNORECASE)
-        
         consumos = {
             'punta': float(m_punta.group(1).replace(',', '.')) if m_punta else 0.0,
             'llano': float(m_llano.group(1).replace(',', '.')) if m_llano else 0.0,
@@ -167,8 +149,7 @@ def extraer_datos_factura(pdf_path):
         m_ener = re.search(r'Energía\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
         total_real = (float(m_fijo.group(1).replace(',', '.')) if m_fijo else 0.0) + (float(m_ener.group(1).replace(',', '.')) if m_ener else 0.0)
         m_consumo_gen = re.search(r'Consumo\s+en\s+este\s+periodo\s*([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
-        valor_consumo = float(m_consumo_gen.group(1).replace(',', '.')) if m_consumo_gen else 0.0
-        consumos = {'punta': valor_consumo, 'llano': 0.0, 'valle': 0.0}
+        consumos = {'punta': float(m_consumo_gen.group(1).replace(',', '.')) if m_consumo_gen else 0.0, 'llano': 0.0, 'valle': 0.0}
         excedente = 0.0
 
     elif es_iberdrola:
@@ -235,6 +216,7 @@ def extraer_datos_factura(pdf_path):
         "Total Real": round(total_real, 2)
     }
 
+# --- INTERFAZ STREAMLIT ---
 st.set_page_config(page_title="Comparador Energético", layout="wide")
 st.title("⚡ Comparador de Facturas Eléctricas Pro")
 
