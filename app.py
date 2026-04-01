@@ -320,45 +320,49 @@ else:
             st.divider()
             
             if not ranking_total.empty:
-                mejor_opcion_nombre = ranking_total.iloc[0]['Compañía/Tarifa']
-                ahorro_total = round(ranking_total.iloc[0]['Ahorro'], 2)
-                st.subheader("🏆 Resultado del Análisis")
-                c1, c2 = st.columns(2)
-                with c1: st.success(f"La mejor compañía es: **{mejor_opcion_nombre}**")
-                with c2: st.metric(label="Ahorro Total Acumulado", value=f"{ahorro_total} €")
-
-                # --- BOTÓN DE WHATSAPP PERSONALIZADO (MÁS GRANDE, VERDE Y NEGRITA) ---
-                msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_total}€ con la compañía {mejor_opcion_nombre}. Me gustaría cambiarme."
-                url_whatsapp = f"https://wa.me/4915154663318?text={msg.replace(' ', '%20')}"
+                st.subheader("🏆 TOP 3 - Mejores Opciones de Ahorro")
                 
-                st.markdown(
-                    f"""
+                # CSS para el botón verde personalizado
+                st.markdown("""
                     <style>
-                    .whatsapp-button {{
-                        display: block;
+                    .whatsapp-button {
+                        display: inline-block;
                         width: 100%;
                         background-color: #25D366;
                         color: white !important;
-                        padding: 20px;
+                        padding: 12px;
                         text-align: center;
                         text-decoration: none;
-                        font-size: 24px;
+                        font-size: 16px;
                         font-weight: bold;
-                        border-radius: 10px;
-                        margin: 20px 0;
+                        border-radius: 8px;
+                        margin-top: 10px;
                         border: none;
-                    }}
-                    .whatsapp-button:hover {{
+                    }
+                    .whatsapp-button:hover {
                         background-color: #128C7E;
-                    }}
+                    }
                     </style>
-                    <a href="{url_whatsapp}" target="_blank" class="whatsapp-button">
-                        🚀 ¡CÁMBIATE DE COMPAÑÍA AHORA!
-                    </a>
-                    """,
-                    unsafe_allow_html=True
-                )
+                """, unsafe_allow_html=True)
 
+                # Tomamos las 3 mejores opciones
+                top_3 = ranking_total.head(3)
+                cols_top = st.columns(len(top_3))
+
+                for i, (idx, row) in enumerate(top_3.iterrows()):
+                    nombre_cia = row['Compañía/Tarifa']
+                    ahorro_val = round(row['Ahorro'], 2)
+                    
+                    with cols_top[i]:
+                        st.metric(label=f"Opción {i+1}", value=f"{ahorro_val} €", delta="Ahorro Total")
+                        st.write(f"**Compañía:** {nombre_cia}")
+                        
+                        msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_val}€ con la compañía {nombre_cia}. Me gustaría cambiarme."
+                        url_whatsapp = f"https://wa.me/4915154663318?text={msg.replace(' ', '%20')}"
+                        
+                        st.markdown(f'<a href="{url_whatsapp}" target="_blank" class="whatsapp-button">CAMBIARME A ESTA COMPAÑÍA</a>', unsafe_allow_html=True)
+
+            st.divider()
             st.subheader("📊 Comparativa Detallada por Factura")
             
             df_mostrar = df_comp.drop(columns=['Dias_Factura'], errors='ignore')
