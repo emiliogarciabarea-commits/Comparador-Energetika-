@@ -314,7 +314,6 @@ else:
             df_comp = df_comp.sort_values(by=["Mes/Fecha", "Ahorro"], ascending=[True, False])
             
             df_solo_ofertas = df_comp[~df_comp["Compañía/Tarifa"].str.contains("📍 TU FACTURA")]
-            # Agrupamos para obtener ahorro total y suma de días analizados
             ranking_total = df_solo_ofertas.groupby("Compañía/Tarifa").agg({'Ahorro': 'sum', 'Dias_Factura': 'sum'}).reset_index()
             ranking_total = ranking_total.sort_values(by="Ahorro", ascending=False)
 
@@ -351,17 +350,18 @@ else:
                 for i, (idx, row) in enumerate(top_3.iterrows()):
                     nombre_cia = row['Compañía/Tarifa']
                     ahorro_total = round(row['Ahorro'], 2)
-                    dias_totales = row['Dias_Factura'] if row['Dias_Factura'] > 0 else 30
+                    dias_totales = int(row['Dias_Factura']) if row['Dias_Factura'] > 0 else 30
                     
                     # Cálculo Ahorro Anual: (Ahorro / Días) * 365 * 1.21 (IVA)
                     ahorro_anual = round((ahorro_total / dias_totales) * 365 * 1.21, 2)
                     
                     with cols_top[i]:
-                        st.metric(label=f"Opción {i+1}", value=f"{ahorro_total} €", delta="Ahorro en Factura")
+                        # Modificación solicitada: Indicamos el ahorro en los X días analizados
+                        st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}")
                         st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €")
                         st.write(f"**Compañía:** {nombre_cia}")
                         
-                        msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_total}€ (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
+                        msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
                         url_whatsapp = f"https://wa.me/4915154663318?text={msg.replace(' ', '%20')}"
                         
                         st.markdown(f'<a href="{url_whatsapp}" target="_blank" class="whatsapp-button">CAMBIARME A ESTA COMPAÑÍA</a>', unsafe_allow_html=True)
