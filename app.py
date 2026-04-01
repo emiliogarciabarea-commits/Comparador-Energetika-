@@ -355,10 +355,21 @@ else:
                     # Cálculo Ahorro Anual: (Ahorro / Días) * 365 * 1.21 (IVA)
                     ahorro_anual = round((ahorro_total / dias_totales) * 365 * 1.21, 2)
                     
+                    # Lógica de color: si el ahorro es negativo, poner delta en rojo ("inverse")
+                    color_metrica = "inverse" if ahorro_total < 0 else "normal"
+                    
                     with cols_top[i]:
-                        # Modificación solicitada: Indicamos el ahorro en los X días analizados
-                        st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}")
-                        st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €")
+                        st.metric(
+                            label=f"Ahorro en {dias_totales} días", 
+                            value=f"{ahorro_total} €", 
+                            delta=f"Opción {i+1}",
+                            delta_color=color_metrica
+                        )
+                        st.metric(
+                            label="Estimación Ahorro Anual (IVA inc.)", 
+                            value=f"{ahorro_anual} €",
+                            delta_color=color_metrica
+                        )
                         st.write(f"**Compañía:** {nombre_cia}")
                         
                         msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
