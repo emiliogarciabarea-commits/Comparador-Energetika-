@@ -246,7 +246,7 @@ def extraer_datos_factura(pdf_path):
 
 # --- Código Streamlit ---
 st.set_page_config(page_title="Comparador Energético", layout="wide")
-st.title("⚡ Comparador de Facturas Eléctricas Pro")
+st.title("⚡ Comparador Energetika de Facturas Eléctricas")
 
 excel_path = "tarifas_companias.xlsx"
 
