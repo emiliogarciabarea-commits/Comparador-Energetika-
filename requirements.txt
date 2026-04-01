@@ -3,3 +3,5 @@ pdfplumber
 pandas
 openpyxl
 xlsxwriter
+fpdf2
+fpdf
