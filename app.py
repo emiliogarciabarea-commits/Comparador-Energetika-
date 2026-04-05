@@ -285,7 +285,7 @@ st.set_page_config(page_title="Comparador Energético", layout="wide")
 if os.path.exists("Logo_Energetika.png"):
     st.image("Logo_Energetika.png", width=370)
 
-st.title("⚡ Comparador de Facturas Eléctricas")
+st.title("⚡ Comparador Energetika de Facturas Eléctricas")
 
 excel_path = "tarifas_companias.xlsx"
 
@@ -409,7 +409,7 @@ else:
                         )
                         st.write(f"**Compañía:** {nombre_cia}")
                         
-                        msg = f"Hola! He usado tu comparador y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
+                        msg = f"Hola! He usado el comparador de Energetika y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
                         url_whatsapp = f"https://wa.me/4915154663318?text={msg.replace(' ', '%20')}"
                         
                         st.markdown(f'<a href="{url_whatsapp}" target="_blank" class="whatsapp-button">CAMBIARME A ESTA COMPAÑÍA</a>', unsafe_allow_html=True)
