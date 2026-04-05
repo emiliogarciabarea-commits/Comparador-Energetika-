@@ -71,7 +71,7 @@ def extraer_datos_factura(pdf_path):
         m_exc = re.search(r'Excedentes.*?([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
         excedente = float(m_exc.group(1).replace(',', '.')) if m_exc else 0.0
 
-    elif es_total_energies:
+   elif es_total_energies:
         compania = "TotalEnergies"
         m_fecha = re.search(r'Fecha\s+emisión:\s*([\d.]{10})', texto_completo, re.IGNORECASE)
         fecha = m_fecha.group(1) if m_fecha else "No encontrada"
@@ -79,30 +79,57 @@ def extraer_datos_factura(pdf_path):
         dias = int(m_dias_meta.group(1)) if m_dias_meta else 0
         m_pot_meta = re.search(r'Potencia\s+P1:\s*([\d,.]+)', texto_completo, re.IGNORECASE)
         potencia = float(m_pot_meta.group(1).replace(',', '.')) if m_pot_meta else 0.0
-        total_real = 0.0
-        lineas = texto_completo.split('\n')
-        for linea in lineas:
-            linea_limpia = linea.strip()
-            if re.search(r'^(\d{2}\.\d{2}\.\d{4})|(\d+\s+día\(s\))', linea_limpia):
-                m_valor = re.findall(r'([\d,.]+)\s*€\s*$', linea_limpia)
-                if m_valor:
-                    total_real += float(m_valor[-1].replace('.', '').replace(',', '.'))
+        v_consumo_final = 0.0
+        v_potencia_final = 0.0
+
+        # 1. Extraer Subtotal de Energía (Consumo)
+        # Buscamos el texto entre 'Consumo (real)' y 'Potencia'
+        m_bloque_cons = re.search(r'Consumo\s+\(real\)(.*?)Potencia', texto_completo, re.DOTALL | re.IGNORECASE)
+        if m_bloque_cons:
+            importes_cons = re.findall(r'([\d,.]+)\s*€', m_bloque_cons.group(1))
+            if importes_cons:
+                # El subtotal es siempre el último valor del bloque de consumo
+                v_consumo_final = float(importes_cons[-1].replace(',', '.'))
+
+        # 2. Extraer Subtotal de Potencia
+        # Buscamos el texto entre 'Potencia' y 'Otros conceptos'
+        m_bloque_pot = re.search(r'Potencia.*?kW(.*?)Otros\s+conceptos', texto_completo, re.DOTALL | re.IGNORECASE)
+        if m_bloque_pot:
+            importes_pot = re.findall(r'([\d,.]+)\s*€', m_bloque_pot.group(1))
+            if importes_pot:
+                # El subtotal es siempre el último valor del bloque de potencia
+                v_potencia_final = float(importes_pot[-1].replace(',', '.'))
+
+        # Sumamos ambos según tu requerimiento
+        total_real = v_consumo_final + v_potencia_final
+
+        # Sumamos ambos según tu requerimiento
+        total_real = v_consumo_final + v_potencia_final
+        
+        # Fallback: Si la suma da 0, intentamos leer el cuadro de "Electricidad" de la página 1
+        if total_real == 0:
+            m_elec_p1 = re.search(r'Electricidad\s+([\d,.]+)\s*€', texto_completo)
+            total_real = float(m_elec_p1.group(1).replace(',', '.')) if m_elec_p1 else 0.0
 
         def extraer_kwh(tipo, texto):
-            patron = rf'{tipo}.*?([\d,.]+)\s*kWh'
-            matches = re.findall(patron, texto, re.IGNORECASE)
+            patron_consumo = rf'consumos\s+han\s+sido.*?{tipo}[:\s]+([\d,.]+)'
+            match_cons = re.search(patron_consumo, texto, re.IGNORECASE | re.DOTALL)
+            if match_cons:
+                return float(match_cons.group(1).replace('.', '').replace(',', '.'))
+
+            patron_gen = rf'{tipo}.*?([\d,.]+)\s*kWh'
+            matches = re.findall(patron_gen, texto, re.IGNORECASE)
             if matches: return float(matches[-1].replace('.', '').replace(',', '.'))
             return 0.0
-
+        
         consumos = {
             'punta': extraer_kwh('Punta', texto_completo),
             'llano': extraer_kwh('Llano', texto_completo),
             'valle': extraer_kwh('Valle', texto_completo)
         }
-        if sum(consumos.values()) == 0:
-            m_gen = re.search(r'(\d+)\s*kWh\s+[\d,.]+\s*€/kWh', texto_completo)
-            if m_gen: consumos['punta'] = float(m_gen.group(1))
-        excedente = 0.0
+        
+        m_excedentes = re.findall(r'(-?[\d,.]+)\s*kWh\s*\(Excedentes\)', texto_completo, re.IGNORECASE)
+        excedente = sum(abs(float(x.replace('.', '').replace(',', '.'))) for x in m_excedentes) if m_excedentes else 0.0
 
     elif es_naturgy:
         compania = "Naturgy"
