@@ -283,7 +283,7 @@ st.set_page_config(page_title="Comparador Energético", layout="wide")
 
 # --- BLOQUE DEL LOGO ---
 if os.path.exists("Logo_Energetika.png"):
-    st.image("Logo_Energetika.jpg", width=370)
+    st.image("Logo_Energetika.png", width=370)
 
 st.title("⚡ Comparador Energetika de Facturas Eléctricas")
 
