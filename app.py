@@ -361,7 +361,7 @@ else:
                 # Se añade column_order para mantener las columnas fijas
                 df_resumen_pdfs = st.data_editor(df_resumen_pdfs, use_container_width=True, hide_index=True, column_order=cols)
             if (df_resumen_pdfs["Potencia (kW)"] == 0).any() or (df_resumen_pdfs["Total Real"] == 0).any() or (df_resumen_pdfs["Días"] == 0).any():
-                st.warning("⚠️ Se han detectado valores nulos en la Potencia, en el Total Real y/o en el número de días de tu factura. Por favor, corrige manualmente los datos de tu factura en la tabla anterior para obtener un cálculo preciso.")
+                st.warning("⚠️ Se han detectado valores nulos en la Potencia, en el Total Real y/o en el número de días de tu factura. Por favor, corrige manualmente los datos de tu factura en la tabla anterior para obtener un cálculo preciso. ⚠️⚠️⚠️")
             
             df_tarifas = pd.read_excel(excel_path)
             resultados_finales = []
