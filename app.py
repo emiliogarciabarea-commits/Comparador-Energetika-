@@ -409,7 +409,7 @@ else:
 
             st.divider()
             
-           if not ranking_total.empty:
+            if not ranking_total.empty:
                 st.subheader("🏆 TOP 3 - Mejores Opciones de Ahorro")
                 
                 st.markdown("""
@@ -417,6 +417,7 @@ else:
                     .whatsapp-button {
                         display: inline-block;
                         width: 100%;
+                        background-color: #25D366;
                         color: white !important;
                         padding: 12px;
                         text-align: center;
@@ -427,35 +428,23 @@ else:
                         margin-top: 10px;
                         border: none;
                     }
-                    /* El hover lo mantenemos general o podrías quitarlo si prefieres inline */
                     .whatsapp-button:hover {
-                        opacity: 0.8;
-                        text-decoration: none;
+                        background-color: #128C7E;
                     }
                     </style>
                 """, unsafe_allow_html=True)
-            
+
                 top_3 = ranking_total.head(3)
                 cols_top = st.columns(len(top_3))
-            
+
                 for i, (idx, row) in enumerate(top_3.iterrows()):
                     nombre_cia = row['Compañía/Tarifa']
                     ahorro_total = round(row['Ahorro'], 2)
                     dias_totales = int(row['Dias_Factura']) if row['Dias_Factura'] > 0 else 30
                     
                     ahorro_anual = round((ahorro_total / dias_totales) * 365 * 1.21, 2)
+                    color_metrica = "inverse" if ahorro_total < 0 else "normal"
                     
-                    # --- LÓGICA DE COLOR DINÁMICO ---
-                    if ahorro_total < 0:
-                        color_fondo = "#FF4B4B"  # Rojo (Streamlit Red)
-                        texto_boton = "PLAN NO RECOMENDADO" # Opcional: cambiar el texto si es negativo
-                        color_metrica = "inverse"
-                    else:
-                        color_fondo = "#25D366"  # Verde WhatsApp
-                        texto_boton = "CAMBIARME A ESTA COMPAÑÍA"
-                        color_metrica = "normal"
-                    # -------------------------------
-            
                     with cols_top[i]:
                         st.metric(
                             label=f"Ahorro en {dias_totales} días", 
@@ -470,15 +459,12 @@ else:
                         )
                         st.write(f"**Compañía:** {nombre_cia}")
                         
-                        msg = f"Hola! He usado el comparador de Energetika y he visto que el ahorro es de {ahorro_total}€ en {dias_totales} días con la compañía {nombre_cia}."
+                        msg = f"Hola! He usado el comparador de Energetika y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
                         url_whatsapp = f"https://wa.me/34614676150?text={msg.replace(' ', '%20')}"
                         
-                        # Aplicamos el style="background-color: {color_fondo}" dinámicamente
-                        st.markdown(
-                            f'''<a href="{url_whatsapp}" target="_blank" class="whatsapp-button" 
-                            style="background-color: {color_fondo};">{texto_boton}</a>''', 
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f'<a href="{url_whatsapp}" target="_blank" class="whatsapp-button">CAMBIARME A ESTA COMPAÑÍA</a>', unsafe_allow_html=True)
+
+
             st.divider()
             st.subheader("📊 Comparativa Detallada por Factura")
             
