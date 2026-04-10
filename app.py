@@ -330,7 +330,7 @@ def extraer_datos_factura(pdf_path):
 st.set_page_config(page_title="Comparador Energético", layout="wide")
 
 # --- BLOQUE DEL LOGO ---
-if os.path.exists("Logo_Energetika.png"):
+if os.path.exists("Logo_Energetika.jpg"):
     st.image("Logo_Energetika.png", width=280)
 
 st.markdown("### ⚡ Comparador Energetika de Facturas Eléctricas")
