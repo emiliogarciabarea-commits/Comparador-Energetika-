@@ -484,7 +484,7 @@ else:
                             def mostrar_metrica_personalizada(label, value, color):
                                 st.markdown(f"""
                                     <div style="margin-bottom: 20px;">
-                                        <div style="color: #FFFFFF; font-size: 14px; margin-bottom: 5px;">{label}</div>
+                                        <div style="color: #FFFFFF; font-size: 20px; margin-bottom: 5px;">{label}</div>
                                         <div style="color: {color}; font-size: 30px; font-weight: bold;">{value}</div>
                                     </div>
                                 """, unsafe_allow_html=True)
