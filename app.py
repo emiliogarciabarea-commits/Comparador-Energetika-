@@ -439,8 +439,7 @@ else:
                 for i, (idx, row) in enumerate(top_3.iterrows()):
                     nombre_cia = row['Compañía/Tarifa']
                     ahorro_total = round(row['Ahorro'], 2)
-                    dias_totales = int(row['Dias_Factura']) if row['Dias_Factura'] > 0 else 30
-                    
+                    dias_totales = int(row['Dias_Factura']) if row['Dias_Factura'] > 0 else 30      
                     ahorro_anual = round((ahorro_total / dias_totales) * 365 * 1.21, 2)
                     color_metrica = "inverse" if ahorro_total < 0 else "normal"
                 
@@ -452,37 +451,32 @@ else:
                         color_fondo = colores_top[i]
                         texto_boton = "CAMBIARME A ESTA COMPAÑÍA"
                         color_metrica = "normal"
-                    
+
+        
                     with cols_top[i]:
-                        # Abrimos el marco UNA SOLA VEZ para todo el contenido
-                        st.markdown(f"""
-                            <div style="border: 2px solid {color_fondo}; border-radius: 15px; padding: 20px; background-color: #1a1a1a; height: 100%;">
-                            """, unsafe_allow_html=True)
-                        
-                        st.metric(
-                            label=f"Ahorro en {dias_totales} días", 
-                            value=f"{ahorro_total} €", 
-                            delta=f"Opción {i+1}",
-                            delta_color=color_metrica
-                        )
-                        st.metric(
-                            label="Estimación Ahorro Anual (IVA inc.)", 
-                            value=f"{ahorro_anual} €",
-                            delta_color=color_metrica
-                        )
-                        st.write(f"**Compañía:** {nombre_cia}")
-                        
-                        msg = f"Hola! He usado el comparador de Energetika y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
-                        url_whatsapp = f"https://wa.me/34614676150?text={msg.replace(' ', '%20')}"
-                
-                        st.markdown(f'''
-                            <a href="{url_whatsapp}" target="_blank" style="text-decoration: none;">
-                                <div style="background-color: {color_fondo}; padding: 12px; text-align: center; border-radius: 8px; font-weight: bold; border: none; margin-top: 15px;">
+                        # Usamos el contenedor nativo de Streamlit con borde
+                        with st.container(border=True):
+                            # Inyectamos CSS solo para el color del borde de este contenedor específico
+                            st.markdown(f"""<style>
+                                [data-testid="stContainer"]:has(> div > div > div > .marco-{i}) {{
+                                    border: 2px solid {color_fondo} !important;
+                                    background-color: #1a1a1a;
+                                }}
+                            </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
+                            
+                            st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}", delta_color=color_metrica)
+                            st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
+                            st.write(f"**Compañía:** {nombre_cia}")
+                            
+                            msg = f"Hola! Me gustaría cambiarme a {nombre_cia}."
+                            url_whatsapp = f"https://wa.me/34614676150?text={msg.replace(' ', '%20')}"
+                            
+                            st.markdown(f'''<a href="{url_whatsapp}" target="_blank" style="text-decoration: none;">
+                                <div style="background-color: {color_fondo}; padding: 12px; text-align: center; border-radius: 8px; font-weight: bold; margin-top: 10px;">
                                     <span style="color: #000000 !important;">{texto_boton}</span>
                                 </div>
-                            </a>
-                            </div>
-                            ''', unsafe_allow_html=True) # Cerramos el div aquí al final
+                            </a>''', unsafe_allow_html=True)
+   
                             
             st.divider()
             st.subheader("📊 Comparativa Detallada por Factura")
