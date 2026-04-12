@@ -437,6 +437,9 @@ else:
                 top_3 = ranking_total.head(3)
                 cols_top = st.columns(len(top_3))
 
+                # Definimos los colores para el TOP 3
+                colores_top = ["#25D366", "#FFD700", "#FF8C00"] # Verde, Amarillo, Naranja
+                
                 for i, (idx, row) in enumerate(top_3.iterrows()):
                     nombre_cia = row['Compañía/Tarifa']
                     ahorro_total = round(row['Ahorro'], 2)
@@ -444,13 +447,14 @@ else:
                     
                     ahorro_anual = round((ahorro_total / dias_totales) * 365 * 1.21, 2)
                     color_metrica = "inverse" if ahorro_total < 0 else "normal"
-                    
+
                     if ahorro_total < 0:
                         color_fondo = "#FF4B4B"  # Rojo (Streamlit Red)
                         texto_boton = "PLAN NO RECOMENDADO" # Opcional: cambiar el texto si es negativo
                         color_metrica = "inverse"
                     else:
-                        color_fondo = "#25D366"  # Verde WhatsApp
+                        # Asignamos color según posición (0, 1, 2 -> Verde, Amarillo, Naranja)
+                        color_fondo = colores_top[i]
                         texto_boton = "CAMBIARME A ESTA COMPAÑÍA"
                         color_metrica = "normal"
                     
