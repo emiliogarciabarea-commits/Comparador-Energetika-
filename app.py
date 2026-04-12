@@ -468,13 +468,14 @@ else:
                             with col_header:
                                 st.markdown(f"""
                                     <div style="
-                                        text-align: left; 
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
                                         font-weight: bold; 
-                                        font-size: 24px;
-                                        padding-left: 60px;
-                                        margin-bottom: 15px; 
+                                        font-size: 20px; 
+                                        margin-bottom: 20px; 
                                         color: {color_fondo};
-                                    ">
+                                                            ">
                                         Opción {i+1}
                                     </div>
                                 """, unsafe_allow_html=True)
