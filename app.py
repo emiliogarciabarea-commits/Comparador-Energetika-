@@ -470,7 +470,7 @@ else:
                             color: #000000 !important;
                         }
                         </style>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
                     
                     with cols_top[i]:
                         st.markdown(f"""
