@@ -459,8 +459,7 @@ else:
                             # Inyectamos CSS solo para el color del borde de este contenedor específico
                             st.markdown(f"""<style>
                                 [data-testid="stContainer"]:has(> div > div > div > .marco-{i}) {{
-                                    border: 5px solid {color_fondo} !important; padding-left: 10px !important;
-                                    padding-right: 10px !important;
+                                    border: 5px solid {color_fondo} !important;
                                     background-color: #1a1a1a;
                                 }}
                             </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
@@ -470,8 +469,6 @@ else:
                                 st.markdown(f"""
                                     <div style="
                                         display: flex;
-                                        flex-direction: column;
-                                        align-items: center;
                                         font-weight: bold; 
                                         font-size: 20px; 
                                         margin-bottom: 20px; 
