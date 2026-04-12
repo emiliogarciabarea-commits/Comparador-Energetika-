@@ -468,7 +468,7 @@ else:
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
                             st.write(f"**Compañía:** {nombre_cia}")
                             
-                            msg = f"Hola! Me gustaría cambiarme a {nombre_cia}."
+                            msg = f"Hola! He usado el comparador de Energetika y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
                             url_whatsapp = f"https://wa.me/34614676150?text={msg.replace(' ', '%20')}"
                             
                             st.markdown(f'''<a href="{url_whatsapp}" target="_blank" style="text-decoration: none;">
