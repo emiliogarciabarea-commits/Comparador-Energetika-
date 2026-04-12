@@ -471,7 +471,7 @@ else:
                                         text-align: left; 
                                         font-weight: bold; 
                                         font-size: 18px;
-                                        padding-left: 90px;
+                                        padding-left: 80px;
                                         margin-bottom: 15px; 
                                         color: {color_fondo};
                                     ">
