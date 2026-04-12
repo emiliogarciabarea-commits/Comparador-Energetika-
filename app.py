@@ -451,27 +451,30 @@ else:
                         color_fondo = colores_top[i]
                         texto_boton = "CAMBIARME A ESTA COMPAÑÍA"
                         color_metrica = "normal"
-
+                   
+                    st.markdown("""
+                            <style>
+                            /* Buscamos el contenedor con borde de Streamlit y le damos el estilo */
+                            [data-testid="stVerticalBlock"] > div.stContainer {
+                                background-color: #D3D3D3 !important;
+                                border: 6px solid #FFFFFF !important;
+                                border-radius: 20px !important;
+                                padding: 20px !important;
+                                color: #000000 !important;
+                            }
+                            /* Forzamos que los textos y valores sean negros */
+                            [data-testid="stVerticalBlock"] > div.stContainer *, 
+                            [data-testid="stVerticalBlock"] > div.stContainer p {
+                                color: #000000 !important;
+                            }
+                            </style>
+                        """, unsafe_allow_html=True)
         
                     with cols_top[i]:
                         # Usamos el contenedor nativo de Streamlit con borde
                         with st.container(border=True):
                             # Inyectamos CSS solo para el color del borde de este contenedor específico
-                            st.markdown(f"""
-                                    <table style="
-                                        width: 100%; 
-                                        background-color: #D3D3D3; 
-                                        border: 6px solid #FFFFFF; 
-                                        border-radius: 20px; 
-                                        border-collapse: separate; 
-                                        border-spacing: 0;
-                                        padding: 20px;
-                                        color: #000000;
-                                    ">
-                                        <tr>
-                                            <td>
-                                                <div style="color: #000000 !important;">
-                                """, unsafe_allow_html=True)
+                            with st.container(border=True):
                             
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
@@ -486,7 +489,7 @@ else:
                                 {texto_boton}
                             </div>
                             </a>''', unsafe_allow_html=True)
-                            st.markdown("</div></td></tr></table>", unsafe_allow_html=True)
+                            
    
                             
             st.divider()
