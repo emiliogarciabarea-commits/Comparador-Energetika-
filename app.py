@@ -455,18 +455,18 @@ else:
                             # Inyectar estilos para forzar el color de fondo y texto en los elementos de Streamlit
                     st.markdown("""
                         <style>
-                        /* El contenedor manual */
-                        .marco-gris {
+                        /* Aplicamos estilo a los contenedores nativos con borde */
+                        [data-testid="stVerticalBlock"] > div.stContainer {
                             background-color: #D3D3D3 !important;
-                            color: #000000 !important;
-                            padding: 20px !important;
+                            border: 4px solid #FFFFFF !important;
                             border-radius: 20px !important;
-                            border: 3px solid #FFFFFF !important;
+                            padding: 10px !important;
                         }
-                        /* Forzar que los textos y métricas dentro del marco sean negros */
-                        .marco-gris [data-testid="stMetricValue"], 
-                        .marco-gris [data-testid="stMetricLabel"],
-                        .marco-gris p {
+                        /* Forzamos texto negro dentro de estos contenedores */
+                        [data-testid="stVerticalBlock"] > div.stContainer,
+                        [data-testid="stVerticalBlock"] > div.stContainer div,
+                        [data-testid="stVerticalBlock"] > div.stContainer p,
+                        [data-testid="stVerticalBlock"] > div.stContainer span {
                             color: #000000 !important;
                         }
                         </style>
@@ -474,7 +474,7 @@ else:
                     
                     with cols_top[i]:
                         # Usamos el contenedor nativo de Streamlit con borde
-                            st.markdown('<div class="marco-gris">', unsafe_allow_html=True)
+                           with st.container(border=True):
                         #with st.container(border=True):
                             # Inyectamos CSS solo para el color del borde de este contenedor específico
                             #st.markdown(f"""<style>
