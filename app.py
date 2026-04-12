@@ -464,9 +464,9 @@ else:
                             }}
                             [data-testid="stContainer"]:has(> div > div > div > .marco-{i}) {{
                                 background-color: #1a1a1a;
-                                border: none !important; /* Eliminamos el borde por defecto para que solo mande el nuestro */
+                                border: 6px solid {color_fondo} !important; /* Eliminamos el borde por defecto para que solo mande el nuestro */
                             }}
-                        </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
+                            </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
                             
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
