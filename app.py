@@ -469,6 +469,7 @@ else:
                                 st.markdown(f"""
                                     <div style="
                                         display: flex;
+                                        text-align: center;
                                         font-weight: bold;
                                         font-size: 20px; 
                                         margin-bottom: 20px; 
