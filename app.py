@@ -488,7 +488,7 @@ else:
                             url_whatsapp = f"https://wa.me/34614676150?text={msg.replace(' ', '%20')}"
                             
                             st.markdown(f'''<a href="{url_whatsapp}" target="_blank" style="text-decoration: none;">
-                                <div style="background-color: {color_fondo}; padding: 12px; border: 3px solid; text-align: center; border-radius: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 15px;
+                                <div style="background-color: {color_fondo}; padding: 12px; border: 3px solid; text-align: center; border-radius: 20px; font-weight: bold;font-size: 18px; margin-top: 10px; margin-bottom: 15px;
                                 color: #000000;">
                                 {texto_boton}
                             </div>
