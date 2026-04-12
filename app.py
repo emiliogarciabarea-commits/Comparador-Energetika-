@@ -453,7 +453,7 @@ else:
                         color_metrica = "normal"
 
         
-                    with cols_top[i]:
+                with cols_top[i]:
                         # Usamos el contenedor nativo de Streamlit con borde
                             st.markdown(f"""
                                 <div style='
