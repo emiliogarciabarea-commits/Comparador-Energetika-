@@ -470,7 +470,7 @@ else:
                                 st.markdown(f"""
                                     <div style="
                                         display: flex;
-                                        justify-content: center;
+                                        flex-direction: column;
                                         align-items: center;
                                         font-weight: bold; 
                                         font-size: 20px; 
