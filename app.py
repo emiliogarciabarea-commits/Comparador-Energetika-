@@ -424,7 +424,7 @@ else:
                         font-weight: bold;
                         border-radius: 10px;
                         margin-top: 10px;
-                        border: none;
+                        border: 10px solid #FFFFFF !important;
                     }
                     .whatsapp-button:hover {
                         filter: brightness(90%);
