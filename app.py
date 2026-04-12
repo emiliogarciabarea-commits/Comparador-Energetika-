@@ -481,6 +481,14 @@ else:
                                         OPCIÓN {i+1}
                                     </div>
                                 """, unsafe_allow_html=True)
+                                def custom_metric(label, value, color):
+                                    st.markdown(f"""
+                                        <div style="margin-bottom: 15px;">
+                                            <div style="color: #FAFAFA; font-size: 14px; margin-bottom: 5px;">{label}</div>
+                                            <div style="color: {color}; font-size: 30px; font-weight: bold;">{value}</div>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+                                    
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
                             st.write(f"**Compañía:** {nombre_cia}")
