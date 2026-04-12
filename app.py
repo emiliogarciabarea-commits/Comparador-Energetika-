@@ -479,9 +479,22 @@ else:
                                         OPCIÓN {i+1}
                                     </div>
                                 """, unsafe_allow_html=True)
-                                    
-                            st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_metrica)
-                            st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
+
+
+                            def mostrar_metrica_personalizada(label, value, color):
+                                st.markdown(f"""
+                                    <div style="margin-bottom: 20px;">
+                                        <div style="color: #FFFFFF; font-size: 14px; margin-bottom: 5px;">{label}</div>
+                                        <div style="color: {color}; font-size: 30px; font-weight: bold;">{value}</div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            # 2. Reemplazamos tus st.metric actuales por esto:
+                            mostrar_metrica_personalizada(f"Ahorro en {dias_totales} días", f"<b>{ahorro_total} €</b>", color_fondo)
+                            mostrar_metrica_personalizada("Estimación Ahorro Anual (IVA inc.)", f"<b>{ahorro_anual} €</b>", color_fondo)
+                            
+                            #st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_metrica)
+                            #st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
                             st.write(f"**Compañía:** {nombre_cia}")
                             
                             msg = f"Hola! He usado el comparador de Energetika y he visto que puedo ahorrar {ahorro_total}€ en {dias_totales} días (aprox. {ahorro_anual}€ al año) con la compañía {nombre_cia}. Me gustaría cambiarme."
