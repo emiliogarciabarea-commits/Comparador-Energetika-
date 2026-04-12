@@ -458,7 +458,7 @@ else:
                             st.markdown(f"""
                                 <div style="
                                     background-color: #D3D3D3; 
-                                    border: 10px solid #FFFFFF; 
+                                    border: 3px solid #FFFFFF; 
                                     border-radius: 20px; 
                                     padding: 20px; 
                                     color: #000000;
