@@ -378,6 +378,7 @@ else:
                         df_temporal.at[i, "Excedente (kWh)"] = cols_row[7].number_input("", value=float(row["Excedente (kWh)"]), key=f"exce_{i}", label_visibility="collapsed")
                         df_temporal.at[i, "Total Real"] = cols_row[8].number_input("", value=float(row["Total Real"]), key=f"total_{i}", label_visibility="collapsed")
                         df_temporal.at[i, "Archivo"] = cols_row[9].text_input("", value=row["Archivo"], key=f"arch_{i}", label_visibility="collapsed")
+                df_resumen_pdfs = df_temporal
                 #df_resumen_pdfs = st.data_editor(df_resumen_pdfs, use_container_width=True, hide_index=True, column_order=cols, column_config=column_config, key="tabla_fija_de_facturas" )
             if (df_resumen_pdfs["Potencia (kW)"] == 0).any() or (df_resumen_pdfs["Total Real"] == 0).any() or (df_resumen_pdfs["Días"] == 0).any():
                 st.warning("⚠️⚠️⚠️ Se han detectado valores nulos en la Potencia, en el Total Real y/o en el número de días de tu factura. Por favor, corrige manualmente los datos de tu factura en la tabla anterior para obtener un cálculo preciso. ⚠️⚠️⚠️")
