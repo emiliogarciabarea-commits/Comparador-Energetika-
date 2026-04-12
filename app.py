@@ -470,7 +470,7 @@ else:
                                     <div style="
                                         text-align: left; 
                                         font-weight: bold; 
-                                        font-size: 18px;
+                                        font-size: 24px;
                                         padding-left: 80px;
                                         margin-bottom: 15px; 
                                         color: {color_fondo};
