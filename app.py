@@ -337,14 +337,6 @@ st.markdown("### ⚡ Comparador Energetika de Facturas Eléctricas")
 
 excel_path = "tarifas_companias.xlsx"
 
-st.markdown(f"""
-    <style>
-    /* Esto cambia el color del número grande en TODOS los st.metric */
-    [data-testid="stMetricValue"] {{
-        color: {color_fondo} !important;
-    }}
-    </style>
-""", unsafe_allow_html=True)
 
 if not os.path.exists(excel_path):
     st.error(f"No se encuentra el archivo '{excel_path}' en el repositorio.")
