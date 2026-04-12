@@ -359,31 +359,32 @@ else:
             df_resumen_pdfs = df_resumen_pdfs[cols]
 
             with st.expander("🔍 Ver y corregir datos extraídos", expanded=True):
-                # Definimos la configuración para desactivar la edición del orden
+    # Asegúrate de haber copiado el df antes del bucle: df_temporal = df_resumen_pdfs.copy()
+    
                 for i, row in df_resumen_pdfs.iterrows():
+                    st.markdown(f"---") # Línea separadora entre facturas
                     st.markdown(f"**Factura: {row['Archivo']}**")
                     
-                    # En lugar de una fila única, creamos un contenedor que se adapta
-                    # Usamos 2 columnas para que en móvil sea legible
                     col1, col2 = st.columns(2)
-                    
-                    # Ejemplo de distribución para que no se vea apelotonado
                     df_temporal.at[i, "Compañía"] = col1.text_input("Compañía", value=row["Compañía"], key=f"comp_{i}")
                     df_temporal.at[i, "Fecha"] = col2.text_input("Fecha", value=row["Fecha"], key=f"fecha_{i}")
                     
                     col3, col4 = st.columns(2)
                     df_temporal.at[i, "Potencia (kW)"] = col3.number_input("Potencia (kW)", value=float(row["Potencia (kW)"]), key=f"pot_{i}")
                     df_temporal.at[i, "Días"] = col4.number_input("Días", value=int(row["Días"]), key=f"dias_{i}")
-
-                    # Ponemos el resto de consumos en un bloque más claro
+            
                     with st.container():
-                        c1, c2, c3 = st.columns(3)
+                        c1, c2, c3, c4 = st.columns(4) # ¡Añadimos 4 columnas para incluir Excedente!
                         df_temporal.at[i, "Consumo Punta (kWh)"] = c1.number_input("Punta", value=float(row["Consumo Punta (kWh)"]), key=f"punta_{i}")
                         df_temporal.at[i, "Consumo Llano (kWh)"] = c2.number_input("Llano", value=float(row["Consumo Llano (kWh)"]), key=f"llano_{i}")
                         df_temporal.at[i, "Consumo Valle (kWh)"] = c3.number_input("Valle", value=float(row["Consumo Valle (kWh)"]), key=f"valle_{i}")
-            
-                    # Finalizamos con datos financieros
+                        # AQUÍ ESTABA EL FALLO: faltaba capturar el excedente
+                        df_temporal.at[i, "Excedente (kWh)"] = c4.number_input("Excedente", value=float(row["Excedente (kWh)"]), key=f"exce_{i}")
+                        
                     df_temporal.at[i, "Total Real"] = st.number_input("Total Real (€)", value=float(row["Total Real"]), key=f"total_{i}")
+            
+                # IMPORTANTE: Esta línea es la que guarda tus cambios en el dataframe original
+                df_resumen_pdfs = df_temporal
         
                 #df_resumen_pdfs = st.data_editor(df_resumen_pdfs, use_container_width=True, hide_index=True, column_order=cols, column_config=column_config, key="tabla_fija_de_facturas" )
             if (df_resumen_pdfs["Potencia (kW)"] == 0).any() or (df_resumen_pdfs["Total Real"] == 0).any() or (df_resumen_pdfs["Días"] == 0).any():
