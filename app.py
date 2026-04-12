@@ -464,7 +464,7 @@ else:
                                 }}
                             </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
                             # 1. Creamos una fila para "Opción X" y la centramos/alineamos
-                            col_header, col_empty = st.columns([0.3, 0.7]) # Ajusta 0.3 según prefieras el tamaño
+                            col_header, col_empty = st.columns([0.5, 0.7]) # Ajusta 0.3 según prefieras el tamaño
                             with col_header:
                                 st.markdown(f"**Opción {i+1}**")
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_metrica)
