@@ -453,32 +453,32 @@ else:
                         color_metrica = "normal"
 
         
-                with cols_top[i]:
+                            with cols_top[i]:
                         # Usamos el contenedor nativo de Streamlit con borde
-                            st.markdown(f"""
-                                <div style='
-                                    background-color: #D3D3D3; 
-                                    border: 12px solid #FFFFFF; 
-                                    border-radius: 20px; 
-                                    padding: 25px; 
-                                    color: #000000;
-                                '>
-                                    <div style='font-size: 14px; font-weight: bold; margin-bottom: 5px;'>Ahorro en {dias_totales} días</div>
-                                    <div style='font-size: 30px; font-weight: bold; margin-bottom: 15px;'>{ahorro_total} €</div>
-                                    
-                                    <div style='font-size: 14px; font-weight: bold; margin-bottom: 5px;'>Estimación Ahorro Anual (IVA inc.)</div>
-                                    <div style='font-size: 30px; font-weight: bold; margin-bottom: 15px;'>{ahorro_anual} €</div>
-                                    
-                                    <div style='margin-bottom: 20px;'><strong>Compañía:</strong> {nombre_cia}</div>
-                                    
-                                    <a href='{url_whatsapp}' target='_blank' style='text-decoration: none;'>
-                                        <div style='background-color: {color_fondo}; padding: 15px; text-align: center; border-radius: 10px; font-weight: bold; color: #000000;'>
-                                            {texto_boton}
-                                        </div>
-                                    </a>
-                                </div>
-                                """, unsafe_allow_html=True)
-                                    
+                                st.markdown(f"""
+                                    <div style='
+                                        background-color: #D3D3D3; 
+                                        border: 12px solid #FFFFFF; 
+                                        border-radius: 20px; 
+                                        padding: 25px; 
+                                        color: #000000;
+                                    '>
+                                        <div style='font-size: 14px; font-weight: bold; margin-bottom: 5px;'>Ahorro en {dias_totales} días</div>
+                                        <div style='font-size: 30px; font-weight: bold; margin-bottom: 15px;'>{ahorro_total} €</div>
+                                        
+                                        <div style='font-size: 14px; font-weight: bold; margin-bottom: 5px;'>Estimación Ahorro Anual (IVA inc.)</div>
+                                        <div style='font-size: 30px; font-weight: bold; margin-bottom: 15px;'>{ahorro_anual} €</div>
+                                        
+                                        <div style='margin-bottom: 20px;'><strong>Compañía:</strong> {nombre_cia}</div>
+                                        
+                                        <a href='{url_whatsapp}' target='_blank' style='text-decoration: none;'>
+                                            <div style='background-color: {color_fondo}; padding: 15px; text-align: center; border-radius: 10px; font-weight: bold; color: #000000;'>
+                                                {texto_boton}
+                                            </div>
+                                        </a>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                        
                             
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
