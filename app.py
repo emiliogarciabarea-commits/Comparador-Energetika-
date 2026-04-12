@@ -452,17 +452,37 @@ else:
                         texto_boton = "CAMBIARME A ESTA COMPAÑÍA"
                         color_metrica = "normal"
 
-        
+                            # Inyectar estilos para forzar el color de fondo y texto en los elementos de Streamlit
+                    st.markdown("""
+                        <style>
+                        /* El contenedor manual */
+                        .marco-gris {
+                            background-color: #D3D3D3 !important;
+                            color: #000000 !important;
+                            padding: 20px !important;
+                            border-radius: 20px !important;
+                            border: 8px solid #FFFFFF !important;
+                        }
+                        /* Forzar que los textos y métricas dentro del marco sean negros */
+                        .marco-gris [data-testid="stMetricValue"], 
+                        .marco-gris [data-testid="stMetricLabel"],
+                        .marco-gris p {
+                            color: #000000 !important;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
                     with cols_top[i]:
                         # Usamos el contenedor nativo de Streamlit con borde
-                        with st.container(border=True):
+                        st.markdown('<div class="marco-gris">', unsafe_allow_html=True)
+                        #with st.container(border=True):
                             # Inyectamos CSS solo para el color del borde de este contenedor específico
-                            st.markdown(f"""<style>
-                                [data-testid="stContainer"]:has(> div > div > div > .marco-{i}) {{
-                                    border: 2px solid {color_fondo} !important;
-                                    background-color: #D3D3D3;
-                                }}
-                            </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
+                            #st.markdown(f"""<style>
+                                #[data-testid="stContainer"]:has(> div > div > div > .marco-{i}) {{
+                                    #border: 2px solid {color_fondo} !important;
+                                    #background-color: #D3D3D3;
+                               # }}
+                           # </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
                             
                             st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta=f"Opción {i+1}", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
