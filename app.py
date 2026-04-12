@@ -462,6 +462,9 @@ else:
                                     border: 5px solid {color_fondo} !important;
                                     background-color: #1a1a1a;
                                 }}
+                                [data-testid="stContainer"]:has(> div > div > div > .marco-{i}) [data-testid="stMetricValue"] {{
+                                    color: {color_fondo} !important;
+                                }}
                             </style><div class="marco-{i}"></div>""", unsafe_allow_html=True)
                             # 1. Creamos una fila para "Opción X" y la centramos/alineamos
                             col_header, col_empty = st.columns([15, 25]) # Ajusta 0.3 según prefieras el tamaño
@@ -478,7 +481,7 @@ else:
                                         OPCIÓN {i+1}
                                     </div>
                                 """, unsafe_allow_html=True)
-                            st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_fondo)
+                            st.metric(label=f"Ahorro en {dias_totales} días", value=f"{ahorro_total} €", delta_color=color_metrica)
                             st.metric(label="Estimación Ahorro Anual (IVA inc.)", value=f"{ahorro_anual} €", delta_color=color_metrica)
                             st.write(f"**Compañía:** {nombre_cia}")
                             
