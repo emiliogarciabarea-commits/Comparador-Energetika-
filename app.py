@@ -479,9 +479,19 @@ else:
                     color_metrica = "inverse" if ahorro_total < 0 else "normal"
                     #es lo que he anadido
                     def obtener_logo(nombre_compania):
-                    # Esto busca un archivo como "logos/Iberdrola.png"
-                        ruta = f"logos/{nombre_compania.split()[0]}.png" 
-                        return ruta if os.path.exists(ruta) else None
+                        # Convertimos todo a minúsculas para comparar
+                        nombre_buscado = nombre_compania.lower().split()[0]
+                        
+                        # Listamos los archivos en la carpeta 'Logos' (asegúrate de que sea 'Logos')
+                        ruta_carpeta = "Logos"
+                        if not os.path.exists(ruta_carpeta):
+                            return None
+                            
+                        for archivo in os.listdir(ruta_carpeta):
+                            # Buscamos si el nombre del archivo (en minúsculas) contiene el nombre de la compañía
+                            if nombre_buscado in archivo.lower() and archivo.lower().endswith(('.png', '.jpg', '.jpeg')):
+                                return os.path.join(ruta_carpeta, archivo)
+                        return None
                 
                     if ahorro_total < 0:
                         color_fondo = "#FF4B4B"  # Rojo
@@ -497,6 +507,7 @@ else:
                         # Usamos el contenedor nativo de Streamlit con borde
                         with st.container(border=True):
                             #esto es lo que he anadido
+                            st.write(f"DEBUG: Buscando logo para: {nombre_cia.lower().split()[0]}") 
                             logo_path = obtener_logo(nombre_cia)
                             if logo_path:
                                 st.image(logo_path, width=120) # Ajusta el ancho a tu gusto
