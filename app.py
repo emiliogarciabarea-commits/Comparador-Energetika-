@@ -510,6 +510,10 @@ else:
                             #st.write(f"DEBUG: Buscando logo para: {nombre_cia.lower().split()[0]}") 
                             logo_path = obtener_logo(nombre_cia)
                             if logo_path:
+                                c1, c2, c3 = st.columns([1, 2, 1])
+                                with c2:
+                                    st.image(logo_path, width=120)
+                                
                                 st.image(logo_path, width=120) # Ajusta el ancho a tu gusto
                             else:
                                 st.write(f"**{nombre_cia}**") # Si no hay logo, muestra el nombre
