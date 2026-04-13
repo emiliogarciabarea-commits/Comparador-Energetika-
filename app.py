@@ -388,7 +388,7 @@ else:
                         df_temporal.at[i, "Consumo Valle (kWh)"] = c3.number_input("Consumo Valle (kWh)", value=float(row["Consumo Valle (kWh)"]), key=f"valle_{i}")
                         df_temporal.at[i, "Excedente (kWh)"] = c4.number_input("Excedente (kWh)", value=float(row["Excedente (kWh)"]), key=f"exce_{i}")
                         
-                        df_temporal.at[i, "Total Real"] = st.number_input("Total Real (€)", value=float(row["Total Real"]), key=f"total_{i}")
+                        df_temporal.at[i, "Total Real"] = st.number_input("Total Real (€) (Antes de Impuestos)", value=float(row["Total Real"]), key=f"total_{i}")
             
                 df_resumen_pdfs = df_temporal
     
