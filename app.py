@@ -512,7 +512,7 @@ else:
                             if logo_path:
                                 c1, c2, c3 = st.columns([1, 2, 1])
                                 with c1:
-                                    st.image(logo_path, width=120)
+                                    st.image(logo_path, width=140)
                             else:
                                 st.write(f"**{nombre_cia}**") # Si no hay logo, muestra el nombre
                             # Inyectamos CSS solo para el color del borde de este contenedor específico
