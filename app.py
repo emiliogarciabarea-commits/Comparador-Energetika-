@@ -443,29 +443,37 @@ else:
             ranking_total = ranking_total.sort_values(by="Ahorro", ascending=False)
 
             st.divider()
-            
+            #lo que modifico para filtrar Esluz
+            excedente_usuario = df_resumen_pdfs['Excedente (kWh)'].iloc[0]
+            # Filtramos: Si el excedente es <= 0, eliminamos 'Esluz' del ranking
+            if excedente_usuario <= 0:
+                ranking_total = ranking_total[~ranking_total["Compañía/Tarifa"].str.contains("Esluz", case=False, na=False)]
+            # --- FIN DEL FILTRO ---
+
+            st.divider()
             if not ranking_total.empty:
-                st.subheader("🏆 TOP 3 - Mejores Opciones de Ahorro")
-                
-                st.markdown("""
-                    <style>
-                    .whatsapp-button {
-                        display: inline-block;
-                        width: 100%;
-                        padding: 12px;
-                        text-align: center;
-                        text-decoration: none;
-                        font-size: 16px;
-                        font-weight: bold;
-                        border-radius: 8px;
-                        margin-top: 10px;
-                        border: 3px;
-                    }
-                    .whatsapp-button:hover {
-                        filter: brightness(90%);
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
+                        if not ranking_total.empty:
+                            st.subheader("🏆 TOP 3 - Mejores Opciones de Ahorro")
+                            
+                            st.markdown("""
+                                <style>
+                                .whatsapp-button {
+                                    display: inline-block;
+                                    width: 100%;
+                                    padding: 12px;
+                                    text-align: center;
+                                    text-decoration: none;
+                                    font-size: 16px;
+                                    font-weight: bold;
+                                    border-radius: 8px;
+                                    margin-top: 10px;
+                                    border: 3px;
+                                }
+                                .whatsapp-button:hover {
+                                    filter: brightness(90%);
+                                }
+                                </style>
+                            """, unsafe_allow_html=True)
 
                 top_3 = ranking_total.head(3)
                 cols_top = st.columns(len(top_3))
