@@ -531,13 +531,14 @@ else:
                                 """, unsafe_allow_html=True)
                             #esto es lo que he anadido
                             #st.write(f"DEBUG: Buscando logo para: {nombre_cia.lower().split()[0]}") 
+
                             logo_path = obtener_logo(nombre_cia)
-                                if logo_path:
-                                    c1, c2, c3 = st.columns([1, 2, 1])
-                                    with c1:
-                                        st.image(logo_path, width=140)
-                                else:
-                                    st.write(f"**{nombre_cia}**") # Si no hay logo, muestra el nombre
+                            if logo_path:
+                                c1, c2, c3 = st.columns([1, 2, 1])
+                                with c1:
+                                    st.image(logo_path, width=140)
+                            else:
+                                st.write(f"**{nombre_cia}**") # Si no hay logo, muestra el nombre
 
                             def mostrar_metrica_personalizada(label, value, color):
                                 st.markdown(f"""
