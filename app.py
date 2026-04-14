@@ -335,7 +335,7 @@ if os.path.exists("Logo_Energetika.png"):
 
 st.markdown("### ⚡ Comparador Energetika de Facturas Eléctricas")
 
-excel_path = "tarifas_companias.xlsx"
+excel_path = "tarifas_companias.xls"
 
 
 if not os.path.exists(excel_path):
