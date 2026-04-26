@@ -1,0 +1,15 @@
+name: Despertador de Streamlit
+
+on:
+  schedule:
+    # Esto se ejecuta cada 20 minutos
+    - cron: '*/20 * * * *'
+  workflow_dispatch: # Esto te permite darle a un botón para probarlo ahora
+
+jobs:
+  ping_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Visitar la App
+        run: |
+          curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -L "https://emiliogarciabarea-commits-comparador-energetika--app-ofjhwz.streamlit.app/?ping=true"
