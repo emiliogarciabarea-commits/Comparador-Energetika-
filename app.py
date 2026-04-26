@@ -5,12 +5,22 @@ import streamlit as st
 import io
 import os
 import sys
+from datetime import datetime
+import pytz
 
-# --- 2. LÓGICA DE KEEP-ALIVE (AQUÍ VA EL PING) ---
+# Configura tu zona horaria (ejemplo: Madrid)
+zona_horaria = pytz.timezone("Europe/Madrid")
+
+# Lógica de Ping con memoria
 if st.query_params.get("ping") == "true":
-    print("🔔 PING DETECTADO: El robot ha visitado la app") # <--- AÑADE ESTO
-    st.sidebar.success("Conexión activa (Ping recibido)")
+    ahora = datetime.now(zona_horaria).strftime("%H:%M:%S")
+    # Esto guardará un mensaje en los logs internos
+    print(f"✅ PING EXITOSO A LAS {ahora}", flush=True)
+    
+    # Esto lo verás tú en la pantalla si entras con el link
+    st.sidebar.success(f"Conexión activa. Último ping: {ahora}")
     st.stop()
+
     
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
