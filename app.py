@@ -7,8 +7,10 @@ import os
 
 # --- 2. LÓGICA DE KEEP-ALIVE (AQUÍ VA EL PING) ---
 if st.query_params.get("ping") == "true":
+    print("🔔 PING DETECTADO: El robot ha visitado la app") # <--- AÑADE ESTO
     st.sidebar.success("Conexión activa (Ping recibido)")
-    st.stop() # Esto detiene la ejecución aquí para el robot, ahorrando recursos.
+    st.stop()
+    
 def extraer_datos_factura(pdf_path):
     texto_completo = ""
     with pdfplumber.open(pdf_path) as pdf:
