@@ -1,4 +1,4 @@
-name: Despertador Real con Navegador
+name: Despertador Real con Navegador 2
 on:
   schedule:
     - cron: '0 * * * *' # Una vez por hora es suficiente si es una visita real
