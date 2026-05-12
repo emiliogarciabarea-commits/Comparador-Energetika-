@@ -323,11 +323,15 @@ def extraer_datos_factura(pdf_path):
             m_exc = re.search(r'Compensación\s+excedentes.*?\s*([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
             excedente = float(m_exc.group(1).replace(',', '.')) if m_exc else 0.0
             
-            # Total Real (Suma de Potencia + Energía antes de descuentos de batería/wallet)
-            m_val_pot = re.search(r'Potencia:\s*([\d,.]+)\s*€', texto_completo)
-            m_val_ene = re.search(r'Energía:\s*([\d,.]+)\s*€', texto_completo)
+           
+            # --- CÁLCULO TOTAL REAL (Suma de Total Potencia + Total Energía) ---
+            # Buscamos los importes en euros de las líneas específicas del desglose
+            m_val_pot = re.search(r'Total\s+Potencia\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+            m_val_ene = re.search(r'Total\s+Energía\s*([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+            
             v_pot = float(m_val_pot.group(1).replace(',', '.')) if m_val_pot else 0.0
             v_ene = float(m_val_ene.group(1).replace(',', '.')) if m_val_ene else 0.0
+            
             total_real = v_pot + v_ene
 
 
