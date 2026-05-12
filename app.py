@@ -301,8 +301,8 @@ def extraer_datos_factura(pdf_path):
             fecha = m_fecha.group(1) if m_fecha else "No encontrada"
             
             # Días de consumo (calculados entre las fechas del periodo o buscando el texto de potencia)
-            m_dias = re.search(r'(\d+)\s*dias', texto_completo, re.IGNORECASE)
-            dias = int(m_dias.group(1)) if m_dias else 0
+            m_dias_factura = re.search(r'(\d+)\s*d[ií]as', texto_completo, re.IGNORECASE)
+            dias = int(m_dias_factura.group(1)) if m_dias_factura else 0
             
             # Potencia contratada (toma la Punta por defecto)
             m_pot = re.search(r'Punta:\s*([\d,.]+)\s*kW', texto_completo, re.IGNORECASE)
