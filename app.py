@@ -37,6 +37,7 @@ def extraer_datos_factura(pdf_path):
     es_total_energies = re.search(r'TotalEnergies', texto_completo, re.IGNORECASE)
     es_xxi = re.search(r'Energía\s+XXI', texto_completo, re.IGNORECASE)
     es_octopus = re.search(r'octopus\s+energy', texto_completo, re.IGNORECASE)
+    es_gana_energia = re.search(r'Gana\s+Energía', texto_completo, re.IGNORECASE)
 
     compania = "Genérica / Desconocida" # Valor por defecto
 
@@ -334,6 +335,50 @@ def extraer_datos_factura(pdf_path):
             
             total_real = v_pot + v_ene
 
+
+    elif es_gana_energia:
+        compania = "Gana Energía"
+        
+        # Fecha de emisión
+        m_fecha = re.search(r'Fecha\s+emisión:\s*([\d/]+)', texto_completo, re.IGNORECASE)
+        fecha = m_fecha.group(1) if m_fecha else "No encontrada"
+        
+        # Días de facturación (ej: "31 días" o "31 dias")
+        m_dias = re.search(r'(\d+)\s*d[ií]as', texto_completo, re.IGNORECASE)
+        dias = int(m_dias.group(1)) if m_dias else 0
+        
+        # Potencia contratada (ej: "P1: 3.8Kw")
+        m_pot = re.search(r'P1:\s*([\d,.]+)\s*Kw', texto_completo, re.IGNORECASE)
+        potencia = float(m_pot.group(1).replace(',', '.')) if m_pot else 0.0
+        
+        # Consumos desglosados (P1=Punta, P2=Llano, P3=Valle)
+        m_punta = re.search(r'P1:\s*([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
+        m_llano = re.search(r'P2:\s*([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
+        m_valle = re.search(r'P3:\s*([\d,.]+)\s*kWh', texto_completo, re.IGNORECASE)
+        
+        consumos = {
+            'punta': float(m_punta.group(1).replace(',', '.')) if m_punta else 0.0,
+            'llano': float(m_llano.group(1).replace(',', '.')) if m_llano else 0.0,
+            'valle': float(m_valle.group(1).replace(',', '.')) if m_valle else 0.0
+        }
+        
+        # Excedentes (No se aprecian en este modelo, se fija a 0.0 por defecto)
+        excedente = 0.0
+        
+        # Cálculo del Total Real (Suma de potencia contrata + energía consumida antes de impuestos)
+        # O si prefieres extraer directamente el "Total a pagar" de la tabla resumen:
+        m_val_pot = re.search(r'Por\s+potencia\s+consumida.*?([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+        m_val_ene = re.search(r'Por\s+energía\s+consumida.*?([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+        
+        v_pot = float(m_val_pot.group(1).replace(',', '.')) if m_val_pot else 0.0
+        v_ene = float(m_val_ene.group(1).replace(',', '.')) if m_val_ene else 0.0
+        
+        total_real = v_pot + v_ene
+        
+        # Fallback en caso de que la tabla de desglose use otro formato, extrae el total general
+        if total_real == 0:
+            m_total = re.search(r'Total\s+a\s+pagar.*?([\d,.]+)\s*€', texto_completo, re.IGNORECASE)
+            total_real = float(m_total.group(1).replace(',', '.')) if m_total else 0.0
 
     
     else:
