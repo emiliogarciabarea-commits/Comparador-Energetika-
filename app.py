@@ -680,7 +680,7 @@ else:
    
                             
             st.divider()
-            st.subheader("📊 Comparativa Detallada por Factura")
+            st.subheader("📊 Comparativa Detallada por  Factura")
                     
             df_mostrar = df_comp.drop(columns=['Dias_Factura'], errors='ignore')
                     
