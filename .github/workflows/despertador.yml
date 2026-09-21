@@ -21,7 +21,7 @@ jobs:
             const browser = await chromium.launch();
             const page = await browser.newPage();
             await page.goto('https://emiliogarciabarea-commits-comparador-energetika--app-ofjhwz.streamlit.app/?ping=true');
-            await page.waitForTimeout(15000); // Se queda 15 segundos dentro
+            await new Promise(resolve => setTimeout(resolve, 15000)); // Espera 15 segundos activa
             console.log('Página cargada y activa');
             await browser.close();
           })();"
